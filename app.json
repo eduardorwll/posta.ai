@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "posta-ai-app",
-    "slug": "posta-ai-app",
+    "slug": "posta-ai",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -32,11 +32,25 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "O posta.ai precisa acessar suas fotos para você adicionar imagens aos seus produtos.",
+          "cameraPermission": "O posta.ai precisa acessar a câmera para você fotografar seus produtos."
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "d7d64d60-78da-4abc-9bde-b1c4832e0c8a"
+      }
+    },
+    "owner": "eduardorwll-apps"
   }
 }
