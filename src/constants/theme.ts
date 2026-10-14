@@ -63,3 +63,21 @@ export const Spacing = {
 
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
+
+/** Paleta oficial do posta.ai (Redesign). */
+export const Palette = {
+  /** Fundo principal das telas. */
+  background: '#004643',
+  /** Superfícies secundárias: TabBar, cards, inputs, bordas fortes. */
+  surface: '#001e1d',
+  /** Títulos, preços e textos principais. */
+  headline: '#fffffe',
+  /** Labels, placeholders, textos secundários e aba inativa. */
+  paragraph: '#abd1c6',
+  /** CTA, borda de input em foco e aba ativa. */
+  highlight: '#f9bc60',
+  /** Texto sobre o botão principal. */
+  onHighlight: '#001e1d',
+  /** Ações destrutivas e status de erro. */
+  tertiary: '#e16162',
+} as const;

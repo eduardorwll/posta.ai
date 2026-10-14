@@ -39,3 +39,11 @@ Docs: https://docs.expo.dev/eas/index.md
 - If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
 - Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
 - Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Documentation upkeep (mandatory for all agents)
+
+- The project state docs are `estado_atual.md` (short snapshot), `estado_arquitetural_atual.md` (full architecture/state) and `README.md` (features/usage).
+- Before starting a task, read `estado_arquitetural_atual.md` and `estado_atual.md`.
+- After ANY change that affects behavior, features, file structure, components, types, dependencies, palette or pending tasks, update these docs in the same task, keeping them complete and consistent with each other and with the code. Verify they are up to date before declaring a task done.
+- Do not leave removed files, renamed folders or finished tasks described as pending.
+

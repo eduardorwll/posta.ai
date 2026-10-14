@@ -1,65 +1,48 @@
-# Estado Atual do Projeto
+# Estado Atual do Projeto — posta.ai
 
-App posta.ai em React Native/Expo. Já temos o app/index.tsx capturando fotos, comprimindo e pedindo permissões. Preciso agora implementar Tabs e Zustand.
-
----
-
-## Contexto Técnico Atual
-
-### Ambiente e Dependências
-- **Expo SDK:** 57 (~57.0.28) com React 19.2.3 e React Native 0.86.3.
-- **Roteamento:** Expo Router (~57.0.26) localizado na pasta `src/app/`.
-- **Validação de Código:** ESLint 9 (`eslint.config.js`) e TypeScript configurados e validados (`npx expo lint` e `npx tsc --noEmit` passando sem erros).
-- **Scripts Aprovados:** `unrs-resolver@1.12.2` aprovado no `package.json`.
-
-### Recursos Implementados
-1. **Configuração de Permissões (`app.json`):**
-   - Plugin `expo-image-picker` adicionado com descrições em português para acesso à câmera e galeria de fotos.
-
-2. **Compressão de Imagens (`src/lib/compress-image.ts`):**
-   - Utiliza a API orientada a objetos do SDK 57 (`ImageManipulator.manipulate`).
-   - Redimensionamento respeitando limite de 1280x720 mantendo a proporção (sem esticar ou ampliar imagens menores).
-   - Compressão em JPEG com qualidade 80%.
-
-3. **Tela de Captura e Registro (`src/app/index.tsx`):**
-   - Fundo claro com layout responsivo e limpo.
-   - Seleção de 1 a 5 fotos via Câmera nativa ou Galeria usando `expo-image-picker`.
-   - Compressão local imediata após a seleção de cada foto.
-   - Grid de miniaturas com preview via `expo-image`, botão de exclusão individual e botão para adicionar fotos adicionais até o limite de 5.
-   - Campo de texto livre de múltiplas linhas ("Observações do Usuário").
-   - Ação de "Salvar" que:
-     - Gera o payload JSON e imprime via `console.log`.
-     - Dispara `Alert.alert` nativo com feedback de sucesso ("Sucesso", "Produto pronto para processamento!").
-     - Reseta os estados e oculta o teclado para nova captura.
+> Snapshot compilado em 2026-10-14. Fase 2 do app mobile concluída com suporte a qualidade máxima original (`quality: 1`, sem compressão). Pronto para a validação em dispositivo e subsequente início da Fase 3 (Backend FastAPI + PostgreSQL + Docker).
 
 ---
 
-## Próximos Passos (Tabs e Zustand)
+## 1. Status Geral de Funcionamento
+- **Execução em Dispositivo:** **Aprovada.** O app está rodando de forma fluida no dispositivo móvel, sem travamento na Splash Screen.
+- **Validação de Código:**
+  - `npx tsc --noEmit`: 0 erros (compilação TypeScript 100% íntegra).
+  - `npx expo lint`: 0 erros (apenas 18 warnings automáticos de import duplicado do Gluestack UI v5).
+- **Gerenciamento de Mídia:**
+  - Seleção de 1 a 5 fotos via câmera ou galeria com **qualidade original máxima** (`quality: 1`).
+  - **Compressão e redimensionamento removidos:** `src/lib/compress-image.ts` e o pacote `expo-image-manipulator` foram eliminados do projeto para preservar a integridade total das fotos destinadas aos anúncios online.
+  - Processamento sequencial mantido e recuperação de fotos após reinício da Activity no Android via `ImagePicker.getPendingResultAsync()`.
 
-1. **Estado Global (Zustand):**
-   - Instalação do pacote `zustand`.
-   - Criação da store `src/store/useProductStore.ts` com tipagem completa de produto:
-     - `id: string`
-     - `imagens: string[]`
-     - `observacoes: string`
-     - `preco: number`
-     - `status: 'pendente'`
-     - `created_at: string`
-   - Ação `addProduto(produto)` para persistência em memória local.
+---
 
-2. **Navegação (Expo Router Tabs):**
-   - Criação da estrutura de abas `src/app/(tabs)/_layout.tsx`.
-   - Configuração das duas abas:
-     - **Capturar:** Ícone de câmera.
-     - **Meus Produtos:** Ícone de lista/cards.
-   - Ajuste da rota raiz `src/app/index.tsx` para redirecionamento suave para `/(tabs)/captura`.
+## 2. Formulário e Interface Concluídos
 
-3. **Refatoração da Tela de Captura (`src/app/(tabs)/captura.tsx`):**
-   - Migração do código atual de captura.
-   - Adição do campo numérico de "Valor (R$)".
-   - Atualização da função de salvar para alimentar o Zustand via `addProduto` antes do alerta de sucesso e limpeza dos campos.
+O app mobile possui o fluxo de cadastro e listagem completo:
+1. **Nome do Produto:** Campo de texto obrigatório (mínimo de 3 caracteres) no cadastro, exibido em destaque no card de listagem.
+2. **Condição do Produto:** Chips de seleção rápida (`Novo`, `Como novo`, `Seminovo`, `Usado`).
+3. **Categoria / Nicho:** Chips de seleção rápida (`Roupas e Acessórios`, `Eletrônicos`, `Livros`, `Instrumentos`, `Casa e Decoração`, `Diversos`).
+4. **Preço e Observações:** Campo com máscara/conversão em BRL e textarea para notas adicionais.
+5. **Card de Produto (`ProductCard.tsx`):**
+   - Miniatura da foto principal.
+   - Nome do produto.
+   - Linha sutil de contexto: `Condição • Categoria` (ex.: "Seminovo • Eletrônicos").
+   - Preço formatado em destaque (`#f9bc60`).
+   - Badge de status dinâmico (`Pendente`, `Processando`, `Pronto`, etc.).
+6. **Limpeza do Projeto:** Hooks legados órfãos, componentes não utilizados do template Expo e o módulo `expo-image-manipulator` foram removidos. A pasta de assets está padronizada em `assets/posta.ai.icon/`.
 
-4. **Tela de Listagem de Produtos (`src/app/(tabs)/produtos.tsx`):**
-   - Leitura dos produtos salvos na store.
-   - Estado vazio com mensagem amigável ("Nenhum produto cadastrado").
-   - `FlatList` com cards modernos contendo thumbnail da primeira foto, preço em destaque, trecho das observações e badge de status "Pendente".
+---
+
+## 3. Pendência Imediata de Teste (Fase 2)
+
+- **Validação em Aparelho:** Executar teste no dispositivo físico com development build, opção "Não manter atividades" (*Don't keep activities*) ativada, câmera e galeria com até 5 fotos em resolução total (`quality: 1`), monitorando via `adb logcat`.
+  - *Fallback arquitetural:* Se houver instabilidade por pressão de memória nativa com fotos pesadas (ex.: 50MP), a próxima etapa será persistir os arquivos originais diretamente em disco (`expo-file-system`) e gerar miniaturas leves para consumo da UI.
+
+---
+
+## 4. Próximo Marco: Fase 3 (Persistência & Backend)
+
+Com o contrato de dados fechado no app:
+- **Infraestrutura:** `docker-compose.yml` com PostgreSQL 16 Alpine.
+- **API FastAPI:** Endpoints `POST /produtos` e `GET /produtos`.
+- **Integração:** Conectar o app ao backend para persistência duradoura.
