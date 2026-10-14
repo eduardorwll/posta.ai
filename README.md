@@ -1,25 +1,26 @@
 # 📱 posta.ai
 
-Hub de vendas multiplataforma C2C para catalogação e publicação automatizada no Enjoei e Facebook Marketplace.
+Hub de vendas multiplataforma C2C para catalogação e publicação de produtos em múltiplos canais.
 
 ## ⚡ Features
 
 * **Captura de Fotos:** Seleção de 1 a 5 fotos (câmera ou galeria) com qualidade original máxima (`quality: 1`, sem compressão ou redimensionamento) e recuperação de fotos pendentes após reinício da Activity no Android.
-* **Catálogo em Cards:** Cadastro de nome, condição, categoria, valor e observações com acompanhamento visual por status (`pendente`, `processando_ia`, `aguardando_aprovacao`, `pronto`, `publicado`, `erro`).
-* **Enriquecimento por IA:** Geração automática de títulos, descrições (Gemini Flash) e sugestão de preço médio de mercado.
-* **Aprovação no Telegram:** Revisão rápida e disparo do anúncio com um clique.
-* **Publicação via RPA:** Postagem automática nos marketplaces usando Playwright Headless com sessão persistente.
+* **Formulário de Catalogação:** Cadastro de nome do produto, seleção rápida de condição (novo, como novo, seminovo, usado), categoria (roupas, eletrônicos, livros, instrumentos, casa, diversos), valor em BRL e observações.
+* **Catálogo em Cards:** Listagem dos produtos cadastrados com miniatura da foto, título, tags contextuais (`Condição • Categoria`), preço formatado em destaque e badge de status dinâmico (`pendente`, `processando_ia`, `pronto`, etc.).
+* **Navegação e Interface:** Navegação por abas com Expo Router (Capturar e Meus Produtos), Gluestack UI v5, NativeWind v5 e suporte nativo ao tema escuro oficial da marca.
 
-## 🐳 Como Subir o Docker
+## 🚀 Como Executar o App
 
-Configure o arquivo `.env` na raiz do projeto e inicie os containers em segundo plano:
+Instale as dependências do projeto e inicie o servidor de desenvolvimento via Expo Go:
 
 ```bash
-docker compose up -d
+npm install
+npx expo start
 ```
 
-Para acompanhar os logs de execução:
+Para verificar tipos TypeScript e regras de linter:
 
 ```bash
-docker compose logs -f
+npx tsc --noEmit
+npx expo lint
 ```
