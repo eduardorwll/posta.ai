@@ -1,0 +1,105 @@
+#!/usr/bin/env bash
+set -e
+
+# Carrega shims do mise se disponível para garantir acesso aos binários
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate bash --shims 2>/dev/null)" || true
+fi
+export PATH="$HOME/.local/bin:$HOME/.local/share/mise/shims:$PATH"
+
+EXPO_PID_FILE=".expo/expo.pid"
+EXPO_LOG_FILE=".expo/expo.log"
+mkdir -p .expo
+
+is_expo_running() {
+  if [ -f "$EXPO_PID_FILE" ] && kill -0 "$(cat "$EXPO_PID_FILE")" 2>/dev/null; then
+    return 0
+  fi
+  if lsof -ti :8081 >/dev/null 2>&1; then
+    return 0
+  fi
+  return 1
+}
+
+# Comando para parar os serviços se solicitado explicitamente ou via script stop-omni
+if [ "$1" = "--stop" ] || [ "$1" = "stop" ] || [ "$(basename "$0")" = "stop-omni" ] || [ "$(basename "$0")" = "stop-omni.sh" ]; then
+  echo "Encerrando OmniRoute..."
+  omniroute stop || true
+
+  echo "Encerrando Expo..."
+  if [ -f "$EXPO_PID_FILE" ]; then
+    EXPO_PID=$(cat "$EXPO_PID_FILE")
+    if kill -0 "$EXPO_PID" 2>/dev/null; then
+      kill "$EXPO_PID" 2>/dev/null || true
+    fi
+    rm -f "$EXPO_PID_FILE"
+  fi
+  fuser -k 8081/tcp >/dev/null 2>&1 || true
+
+  echo "Serviços encerrados com sucesso."
+  exit 0
+fi
+
+# Comando para verificar status
+if [ "$1" = "--status" ] || [ "$1" = "status" ]; then
+  echo "=== OmniRoute ==="
+  omniroute status || true
+  echo ""
+  echo "=== Expo ==="
+  if is_expo_running; then
+    echo "Expo em execução na porta 8081."
+    [ -f "$EXPO_PID_FILE" ] && echo "PID: $(cat "$EXPO_PID_FILE")"
+    echo "Logs: $EXPO_LOG_FILE"
+  else
+    echo "Expo não está em execução."
+  fi
+  exit 0
+fi
+
+# Verifica se os executáveis estão disponíveis
+if ! command -v omniroute >/dev/null 2>&1; then
+  echo "Erro: executável 'omniroute' não encontrado no PATH."
+  exit 1
+fi
+
+if ! command -v opencode >/dev/null 2>&1; then
+  echo "Erro: executável 'opencode' não encontrado no PATH."
+  exit 1
+fi
+
+# 1. Inicia o OmniRoute como daemon se ainda não estiver em execução
+if omniroute health 2>/dev/null | grep -q "Status: healthy"; then
+  echo "OmniRoute já está em execução e saudável."
+else
+  echo "Iniciando OmniRoute em segundo plano..."
+  omniroute serve --daemon --no-open
+
+  # Aguarda inicialização do servidor
+  retries=10
+  while [ $retries -gt 0 ]; do
+    if omniroute health 2>/dev/null | grep -q "Status: healthy"; then
+      break
+    fi
+    sleep 0.5
+    retries=$((retries - 1))
+  done
+fi
+
+echo "OmniRoute pronto em http://localhost:20128"
+
+# 2. Inicia o Expo em segundo plano se ainda não estiver em execução
+if is_expo_running; then
+  echo "Expo já está em execução na porta 8081."
+else
+  echo "Iniciando Expo (HOST: 100.110.221.21) em segundo plano..."
+  nohup env REACT_NATIVE_PACKAGER_HOSTNAME=100.110.221.21 bunx expo start -c > "$EXPO_LOG_FILE" 2>&1 &
+  echo $! > "$EXPO_PID_FILE"
+  echo "Expo iniciado (PID: $(cat "$EXPO_PID_FILE"), logs em $EXPO_LOG_FILE)."
+fi
+
+echo "Iniciando OpenCode..."
+echo "---"
+
+# 3. Executa o OpenCode repassando quaisquer argumentos fornecidos com auto-aprovação de ferramentas
+exec opencode --auto "$@"
+

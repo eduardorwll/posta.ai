@@ -47,6 +47,7 @@ Definida em `Palette` (`src/constants/theme.ts`) e aplicada nas telas e componen
 
 | Tecnologia | Versão |
 |---|---|
+| Gerenciador de Pacotes | **Bun** `1.4.0` (`bun.lock`) |
 | Expo SDK | `~57.0.28` |
 | React / React DOM | `19.2.3` |
 | React Native | `0.86.3` |
@@ -61,7 +62,7 @@ Definida em `Palette` (`src/constants/theme.ts`) e aplicada nas telas e componen
 | Reanimated / Worklets | `4.5.1` / `0.10.1` |
 | TypeScript / ESLint | `~6.0.3` / `^9.0.0` |
 
-*Nota:* `expo-image-manipulator` e `src/lib/compress-image.ts` foram removidos do projeto.
+*Nota:* `expo-image-manipulator` e `src/lib/compress-image.ts` foram removidos do projeto. O projeto foi migrado de `npm` para `bun` (`bun.lock`).
 
 ### 2.2 Mapa de Pastas
 
@@ -69,13 +70,19 @@ Definida em `Palette` (`src/constants/theme.ts`) e aplicada nas telas e componen
 posta-ai-app/
 ├── app.json                  # Configuração Expo (dark, splash/adaptive icon #004643, plugins)
 ├── babel.config.js           # babel-preset-expo + nativewind/babel + module-resolver + worklets
+├── bun.lock                  # Lockfile oficial do gerenciador de pacotes Bun
 ├── metro.config.js           # withNativewind
 ├── postcss.config.mjs        # Tailwind v4
 ├── tsconfig.json             # paths: "@/*" -> ./src/*, ./*  |  "@/assets/*" -> ./assets/*
 ├── eslint.config.js
 ├── estado_arquitetural_atual.md  # Este documento de referência
 ├── estado_atual.md           # Snapshot resumido e compilado
-├── AGENTS.md                 # Regras de manutenção do projeto
+├── AGENTS.md                 # Regras de manutenção do projeto, aprovação prévia e otimização de tokens (omni-compression)
+├── CLAUDE.md                 # Referência para Claude Code às diretrizes de AGENTS.md
+├── open-omni (open-omni.sh)   # Script bash para inicialização do ambiente (OmniRoute daemon + Expo com REACT_NATIVE_PACKAGER_HOSTNAME + OpenCode com --auto)
+├── stop-omni (stop-omni.sh)   # Script bash para encerramento dos serviços locais (OmniRoute daemon e Expo)
+├── opencode.json             # Configuração e contexto do OpenCode (permissões automáticas sob governança prévia)
+├── .agents/skills/           # Skills locais para os agentes (Expo, EAS, Gluestack e omni-compression)
 ├── docs/documentacao_mestre_posta_ai.md   # Visão de negócio e arquitetura-alvo
 ├── assets/
 │   ├── posta.ai.icon/        # SVGs originais (icon, isotipo)

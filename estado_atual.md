@@ -6,13 +6,22 @@
 
 ## 1. Status Geral de Funcionamento
 - **Execução em Dispositivo:** **Aprovada.** O app está rodando de forma fluida no dispositivo móvel, sem travamento na Splash Screen.
+- **Gerenciador de Pacotes:** Migrado com sucesso de `npm` para **`bun`** (`bun.lock` gerado e `package-lock.json` removido).
 - **Validação de Código:**
-  - `npx tsc --noEmit`: 0 erros (compilação TypeScript 100% íntegra).
-  - `npx expo lint`: 0 erros (apenas 18 warnings automáticos de import duplicado do Gluestack UI v5).
+  - `bunx tsc --noEmit`: 0 erros (compilação TypeScript 100% íntegra).
+  - `bunx expo lint`: 0 erros (apenas 18 warnings automáticos de import duplicado do Gluestack UI v5).
 - **Gerenciamento de Mídia:**
   - Seleção de 1 a 5 fotos via câmera ou galeria com **qualidade original máxima** (`quality: 1`).
   - **Compressão e redimensionamento removidos:** `src/lib/compress-image.ts` e o pacote `expo-image-manipulator` foram eliminados do projeto para preservar a integridade total das fotos destinadas aos anúncios online.
   - Processamento sequencial mantido e recuperação de fotos após reinício da Activity no Android via `ImagePicker.getPendingResultAsync()`.
+- **Scripts e Ferramentas Locais:**
+  - `open-omni`: script utilitário para subir o daemon do `omniroute` em segundo plano, iniciar o servidor de desenvolvimento Expo (`REACT_NATIVE_PACKAGER_HOSTNAME=100.110.221.21 bunx expo start -c`) em background e abrir a TUI do `opencode` com permissões automáticas (`--auto`).
+  - `stop-omni` / `open-omni --stop`: encerra com segurança tanto o servidor OmniRoute quanto o servidor Expo e libera a porta `8081`.
+- **Diretrizes e Governança de Agentes:**
+  - Adicionada regra obrigatória em `AGENTS.md` e `CLAUDE.md` exigindo que qualquer agente de IA apresente previamente a lista detalhada do que será feito e aguarde a aprovação explícita do usuário antes de fazer qualquer alteração no projeto.
+  - Uso obrigatório de `bunx` em vez de `npx` devido à presença do `bun.lock`.
+  - Adicionada e configurada a skill de otimização de tokens do OmniRoute (`omni-compression`) tanto globalmente (`~/.agents/skills/omni-compression`) quanto no projeto (`.agents/skills/omni-compression`), com obrigatoriedade de uso para economia de tokens e compressão de logs de execução.
+  - Configurado o OpenCode com auto-aprovação de ferramentas (`"permission": "allow"` e flag `--auto`), blindado globalmente por `~/.config/opencode/GLOBAL_RULES.md` para garantir que o agente sempre requisite aprovação explícita antes de qualquer alteração.
 
 ---
 

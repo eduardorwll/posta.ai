@@ -14,13 +14,13 @@ Hub de vendas multiplataforma C2C para catalogação e publicação de produtos 
 Instale as dependências do projeto e inicie o servidor de desenvolvimento via Expo Go:
 
 ```bash
-npm install
-npx expo start
+bun install
+bunx expo start
 ```
 
 Para verificar tipos TypeScript e regras de linter:
 
 ```bash
-npx tsc --noEmit
-npx expo lint
+bunx tsc --noEmit
+bunx expo lint
 ```

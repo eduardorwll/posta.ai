@@ -1,5 +1,19 @@
 This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
+## Regra Obrigatória: Aprovação Prévia de Modificações (Mandatory Pre-Approval)
+
+**ATENÇÃO (Mandatório para todos os agentes de IA no projeto):**
+Antes de executar qualquer prompt, rodar comandos que modifiquem o repositório ou fazer qualquer alteração no projeto (criar, editar ou apagar arquivos de código, componentes, configurações, pacotes ou documentação), o agente DEVE obrigatoriamente:
+1. Limitar-se a operações de leitura e análise prévia (inspeção de arquivos, status, contexto).
+2. Escrever e apresentar ao usuário uma **lista clara, concisa e estruturada** exatamente com o que será feito e quais arquivos/estruturas serão alterados.
+3. **Aguardar a aprovação explícita do usuário** antes de aplicar qualquer alteração ou executar qualquer ação que modifique o estado do projeto.
+
+## Otimização de Tokens e Uso do OmniRoute (Mandatório)
+
+Todos os agentes de IA atuando neste projeto DEVEM obrigatoriamente:
+- Utilizar a skill `omni-compression` (`.agents/skills/omni-compression/SKILL.md` e `~/.agents/skills/omni-compression/SKILL.md`) para consultar e acionar mecanismos de economia de tokens do OmniRoute, especialmente o compressor de saída de terminal (RTK) e a otimização de contexto.
+- Manter o foco na economia de tokens de contexto sem comprometer a exatidão técnica e tipagem de código TypeScript/React Native.
+
 ## Expo has changed — do not trust your training data
 
 Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
