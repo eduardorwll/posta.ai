@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+set -e
+
+# ─── posta.ai: Development Orchestration Script ────────────────────────
+# Inicia o ecossistema completo de desenvolvimento:
+# 1. Backend Docker (PostgreSQL 16 + FastAPI) via ./backend-init
+# 2. Expo Metro Bundler configurado com IP Tailscale (100.110.221.21)
+
+SCRIPT_NAME="$(basename "$0")"
+
+# Carrega shims do mise se disponível
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate bash --shims 2>/dev/null)" || true
+fi
+
+EXPO_PID_FILE="/tmp/expo-posta-ai.pid"
+EXPO_LOG_FILE="/tmp/expo-posta-ai.log"
+
+# Parar serviços se solicitado
+if [ "$1" = "--stop" ] || [ "$1" = "stop" ] || [ "$SCRIPT_NAME" = "dev-stop" ] || [ "$SCRIPT_NAME" = "dev-stop.sh" ]; then
+  echo "Encerrando Expo Metro (porta 8081)..."
+  if [ -f "$EXPO_PID_FILE" ]; then
+    EXPO_PID=$(cat "$EXPO_PID_FILE")
+    if kill -0 "$EXPO_PID" 2>/dev/null; then
+      kill "$EXPO_PID" 2>/dev/null || true
+    fi
+    rm -f "$EXPO_PID_FILE"
+  fi
+  fuser -k 8081/tcp >/dev/null 2>&1 || true
+
+  if [ "$1" = "--all" ] || [ "$2" = "--all" ] || [ "$SCRIPT_NAME" = "dev-stop" ]; then
+    echo "Encerrando containers do backend..."
+    ./backend-init --stop || true
+  fi
+
+  echo "Ambiente de desenvolvimento encerrado com sucesso."
+  exit 0
+fi
+
+# Status dos serviços
+if [ "$1" = "--status" ] || [ "$1" = "status" ]; then
+  echo "=== Backend Docker ==="
+  ./backend-init --status || true
+  echo ""
+  echo "=== Expo Metro ==="
+  if fuser 8081/tcp >/dev/null 2>&1; then
+    echo "🟢 Expo Metro em execução na porta 8081."
+    [ -f "$EXPO_PID_FILE" ] && echo "PID: $(cat "$EXPO_PID_FILE")"
+    [ -f "$EXPO_LOG_FILE" ] && echo "Logs: $EXPO_LOG_FILE"
+  else
+    echo "🔴 Expo Metro não está em execução."
+  fi
+  exit 0
+fi
+
+# 1. Inicia o Backend Docker se necessário
+if [ -f "./backend-init" ]; then
+  echo "Verificando Backend Docker..."
+  if ! curl -s http://localhost:8000/health 2>/dev/null | grep -q "ok"; then
+    ./backend-init || true
+  else
+    echo "🟢 Backend já está ativo e respondendo em http://localhost:8000."
+  fi
+fi
+
+# 2. Inicia o Expo Metro
+TAILSCALE_IP="100.110.221.21"
+echo ""
+echo "Iniciando Expo Metro Bundler (IP Tailscale: $TAILSCALE_IP)..."
+
+if [ "$1" = "--background" ] || [ "$1" = "-d" ]; then
+  if fuser 8081/tcp >/dev/null 2>&1; then
+    echo "🟢 Expo Metro já está em execução na porta 8081."
+  else
+    REACT_NATIVE_PACKAGER_HOSTNAME="$TAILSCALE_IP" nohup bun expo start -c > "$EXPO_LOG_FILE" 2>&1 &
+    echo $! > "$EXPO_PID_FILE"
+    echo "🟢 Expo Metro iniciado em segundo plano (PID: $(cat "$EXPO_PID_FILE"), logs: $EXPO_LOG_FILE)."
+  fi
+  echo "Para encerrar, execute: ./dev-stop"
+  exit 0
+fi
+
+# Execução interativa no terminal
+export REACT_NATIVE_PACKAGER_HOSTNAME="$TAILSCALE_IP"
+exec bun expo start -c

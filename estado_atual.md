@@ -37,10 +37,11 @@
   - `captura.tsx`: envio real para a API com feedback de loading (botão desabilitado + texto "Enviando...") e tratamento de erros.
   - `produtos.tsx`: carregamento automático da API ao montar, Pull-to-Refresh, estados de loading/erro/vazio.
 - **Scripts e Ferramentas Locais:**
-  - `backend-init`: inicializa containers Docker do banco e backend com healthcheck e logs.
-  - `backend-stop`: encerra containers do backend de forma segura.
-  - `open-omni`: sobe OmniRoute daemon + Expo (`REACT_NATIVE_PACKAGER_HOSTNAME=100.110.221.21 bun expo start -c`) + OpenCode TUI.
-  - `stop-omni`: encerra OmniRoute + Expo e libera a porta 8081.
+  - `dev-start` (`bun run dev`): orquestra inicialização do backend Docker e do Expo Metro com IP Tailscale (`100.110.221.21`).
+  - `dev-stop` (`bun run dev:stop`): encerra com segurança o Expo Metro (porta 8081) e os containers Docker.
+  - `backend-init` (`bun run backend:up`): gerencia containers Docker do PostgreSQL e FastAPI.
+  - `backend-stop` (`bun run backend:down`): encerra containers do backend.
+  - `bun run test:backend`: executa a suíte de testes assíncronos do backend (`pytest-asyncio`).
 
 ---
 

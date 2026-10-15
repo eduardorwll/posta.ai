@@ -75,12 +75,12 @@ posta-ai-app/
 ├── eslint.config.js
 ├── estado_arquitetural_atual.md  # Este documento de referência
 ├── estado_atual.md           # Snapshot resumido e compilado
-├── AGENTS.md                 # Regras de governança de IA, aprovação prévia e otimização de tokens
+├── AGENTS.md                 # Regras de governança de IA, aprovação prévia e padrões Expo
 ├── CLAUDE.md                 # Referência para Claude Code às diretrizes de AGENTS.md
-├── backend-init              # Script bash para inicializar backend Docker com logs
-├── backend-stop              # Script bash para parar backend Docker
-├── open-omni (open-omni.sh)   # Script bash para inicialização do ambiente local de desenvolvimento
-├── stop-omni (stop-omni.sh)   # Script bash para encerramento dos serviços locais
+├── dev-start                 # Script de orquestração do ambiente de dev (Backend + Expo Metro)
+├── dev-stop                  # Script para encerramento de todos os serviços de dev
+├── backend-init              # Script bash para gerenciar containers Docker com healthcheck e logs
+├── backend-stop              # Symlink para encerramento dos containers do backend
 ├── .agents/skills/           # Skills locais (api-scaffolding, fastapi-templates, ui-ux-pro-max, agent-rules-books)
 ├── backend/                  # API FastAPI (Python 3.13)
 │   ├── Dockerfile            # Container com dependências de build (gcc, libpq-dev)

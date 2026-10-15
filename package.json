@@ -52,6 +52,14 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
+    "dev": "./dev-start",
+    "dev:bg": "./dev-start --background",
+    "dev:stop": "./dev-stop",
+    "backend:up": "./backend-init",
+    "backend:down": "./backend-init --stop",
+    "backend:logs": "./backend-init --logs",
+    "backend:status": "./backend-init --status",
+    "test:backend": "docker exec posta-ai-backend pytest -v /app/tests",
     "start": "expo start",
     "start:clean": "expo start -c",
     "reset-project": "node ./scripts/reset-project.js",

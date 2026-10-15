@@ -6,8 +6,7 @@ set -e
 # 1. PostgreSQL 16 Alpine
 # 2. FastAPI (Python 3.13)
 # 3. Volumes persistentes de dados e fotos (/storage)
-#
-# Não possui dependências de ferramentas de IA (OpenCode, OmniRoute, etc).
+# Gerenciamento de containers Docker do backend (PostgreSQL + FastAPI).
 
 DOCKER_CMD="docker"
 if ! command -v docker >/dev/null 2>&1; then
