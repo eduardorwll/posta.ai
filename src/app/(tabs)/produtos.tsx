@@ -11,6 +11,7 @@ import {
   FlatList,
   Pressable,
   RefreshControl,
+  Text as RNText,
   TextInput,
   View,
 } from 'react-native';
@@ -20,7 +21,6 @@ import { AppHeader } from '@/components/AppHeader';
 import { ProductCard } from '@/components/ProductCard';
 import { Button, ButtonText } from '@/components/ui/button';
 import { HStack } from '@/components/ui/hstack';
-import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
 import { MaxContentWidth, Spacing, useAppTheme } from '@/constants/theme';
 import { haptic } from '@/lib/haptics';
@@ -125,9 +125,16 @@ export default function ProdutosScreen() {
                 </HStack>
 
                 {searchQuery.length > 0 && (
-                  <Text style={{ color: palette.paragraphMuted }} className="text-xs px-1">
+                  <RNText
+                    style={{
+                      color: palette.paragraphMuted,
+                      fontSize: 12,
+                      lineHeight: 16,
+                      includeFontPadding: false,
+                      paddingHorizontal: 4,
+                    }}>
                     Exibindo {filteredProdutos.length} de {produtos.length} produtos
-                  </Text>
+                  </RNText>
                 )}
               </VStack>
             )}
@@ -150,12 +157,28 @@ export default function ProdutosScreen() {
                 color={palette.danger}
                 strokeWidth={1.5}
               />
-              <Text style={{ color: palette.headline }} className="text-lg font-bold">
+              <RNText
+                style={{
+                  color: palette.headline,
+                  fontSize: 18,
+                  fontWeight: '700',
+                  lineHeight: 24,
+                  textAlign: 'center',
+                  includeFontPadding: false,
+                }}>
                 Erro ao carregar catálogo
-              </Text>
-              <Text style={{ color: palette.paragraph }} className="text-center text-sm">
+              </RNText>
+              <RNText
+                style={{
+                  color: palette.paragraph,
+                  fontSize: 13,
+                  lineHeight: 18,
+                  textAlign: 'center',
+                  includeFontPadding: false,
+                  maxWidth: 280,
+                }}>
                 {error}
-              </Text>
+              </RNText>
               <Button
                 onPress={onRefresh}
                 style={{ backgroundColor: palette.highlight }}
@@ -175,12 +198,28 @@ export default function ProdutosScreen() {
                 color={palette.paragraphMuted}
                 strokeWidth={1.5}
               />
-              <Text style={{ color: palette.headline }} className="text-base font-semibold">
+              <RNText
+                style={{
+                  color: palette.headline,
+                  fontSize: 16,
+                  fontWeight: '600',
+                  lineHeight: 22,
+                  textAlign: 'center',
+                  includeFontPadding: false,
+                }}>
                 Nenhum produto encontrado
-              </Text>
-              <Text style={{ color: palette.paragraph }} className="text-center text-xs">
+              </RNText>
+              <RNText
+                style={{
+                  color: palette.paragraph,
+                  fontSize: 13,
+                  lineHeight: 18,
+                  textAlign: 'center',
+                  includeFontPadding: false,
+                  maxWidth: 260,
+                }}>
                 Nenhum item corresponde ao termo &quot;{searchQuery}&quot;.
-              </Text>
+              </RNText>
               <Button
                 onPress={handleClearSearch}
                 style={{ backgroundColor: palette.surfaceSubtle }}
@@ -200,12 +239,28 @@ export default function ProdutosScreen() {
                 color={palette.paragraphMuted}
                 strokeWidth={1.5}
               />
-              <Text style={{ color: palette.headline }} className="text-lg font-bold">
+              <RNText
+                style={{
+                  color: palette.headline,
+                  fontSize: 18,
+                  fontWeight: '700',
+                  lineHeight: 24,
+                  textAlign: 'center',
+                  includeFontPadding: false,
+                }}>
                 Nenhum produto cadastrado
-              </Text>
-              <Text style={{ color: palette.paragraph }} className="text-center text-sm max-w-xs">
+              </RNText>
+              <RNText
+                style={{
+                  color: palette.paragraph,
+                  fontSize: 14,
+                  lineHeight: 20,
+                  textAlign: 'center',
+                  includeFontPadding: false,
+                  maxWidth: 300,
+                }}>
                 Tire fotos e cadastre itens para gerar anúncios com inteligência artificial para seus canais de venda.
-              </Text>
+              </RNText>
               <Button
                 onPress={handleGoToCaptura}
                 style={{ backgroundColor: palette.highlight }}

@@ -1,8 +1,10 @@
+import { Platform } from 'react-native';
 import type { Produto } from '@/types/product';
 import { useApiConfigStore } from '@/store/useApiConfigStore';
 
 export function getApiBaseUrl(): string {
-  return useApiConfigStore.getState().apiUrl;
+  const url = useApiConfigStore.getState().apiUrl || 'http://100.110.221.21:8000';
+  return url.trim().replace(/\/+$/, '');
 }
 
 export interface ApiError {
@@ -18,6 +20,7 @@ export class ApiException extends Error {
   ) {
     super(message);
     this.name = 'ApiException';
+    Object.setPrototypeOf(this, ApiException.prototype);
   }
 }
 
@@ -28,9 +31,17 @@ async function handleResponse<T>(response: Response): Promise<T> {
 
     try {
       const errorData = await response.json();
-      errorDetail = errorData.detail || errorData.message;
-      if (errorDetail) {
-        errorMessage = errorDetail;
+      if (errorData) {
+        if (typeof errorData.detail === 'string') {
+          errorDetail = errorData.detail;
+          errorMessage = errorData.detail;
+        } else if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ');
+          errorDetail = errorMessage;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+          errorDetail = errorData.message;
+        }
       }
     } catch {
       errorMessage = response.statusText || errorMessage;
@@ -61,12 +72,21 @@ export async function enviarProduto(params: EnviarProdutoParams): Promise<Produt
   formData.append('preco_usuario', params.preco_usuario.toString());
 
   for (let i = 0; i < params.fotos.length; i++) {
-    const uri = params.fotos[i];
+    const rawUri = params.fotos[i];
+    let uri = rawUri;
+    // On Android, file URI must have a scheme like file:// or content://
+    if (Platform.OS === 'android' && !uri.startsWith('file://') && !uri.startsWith('content://')) {
+      uri = `file://${uri}`;
+    }
+
     const filename = uri.split('/').pop() || `photo_${i}.jpg`;
     const cleanFilename = filename.split('?')[0];
     const match = /\.(\w+)$/.exec(cleanFilename);
     const ext = match ? match[1].toLowerCase() : 'jpg';
-    const type = ext === 'png' ? 'image/png' : 'image/jpeg';
+    let type = 'image/jpeg';
+    if (ext === 'png') type = 'image/png';
+    else if (ext === 'webp') type = 'image/webp';
+    else if (ext === 'heic' || ext === 'heif') type = 'image/heic';
     const finalName = cleanFilename.includes('.') ? cleanFilename : `photo_${i}.${ext}`;
 
     formData.append('fotos', {

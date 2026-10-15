@@ -7,8 +7,11 @@ import {
   Linking,
   Platform,
   ScrollView,
+  Text as RNText,
   View,
 } from 'react-native';
+import { Alert02Icon } from '@hugeicons/core-free-icons';
+import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/AppHeader';
@@ -27,7 +30,6 @@ import { Text } from '@/components/ui/text';
 import { Textarea, TextareaInput } from '@/components/ui/textarea';
 import { VStack } from '@/components/ui/vstack';
 import { MaxContentWidth, Spacing, useAppTheme } from '@/constants/theme';
-import { ApiException } from '@/lib/api';
 import { haptic } from '@/lib/haptics';
 import { useProductStore } from '@/store/useProductStore';
 import {
@@ -196,10 +198,12 @@ export default function CapturaScreen() {
       Alert.alert('Sucesso!', 'Produto cadastrado com sucesso no catálogo.', [
         { text: 'OK', onPress: resetForm },
       ]);
-    } catch (e) {
+    } catch (e: any) {
       haptic.error();
-      const message =
-        e instanceof ApiException ? e.message : 'Não foi possível salvar o produto. Verifique sua conexão.';
+      let message = e?.detail || e?.message;
+      if (!message || message === 'Network request failed') {
+        message = 'Não foi possível conectar ao servidor. Verifique a URL em Configurações e sua conexão de rede.';
+      }
       setServerError(message);
     }
   }
@@ -338,16 +342,39 @@ export default function CapturaScreen() {
 
           {/* Mensagem de Erro do Servidor */}
           {serverError && (
-            <VStack
-              style={{ backgroundColor: palette.surface, borderColor: palette.danger }}
-              className="p-3.5 rounded-2xl border gap-1">
-              <Text style={{ color: palette.danger }} className="text-sm font-bold">
-                Falha ao cadastrar
-              </Text>
-              <Text style={{ color: palette.paragraph }} className="text-xs">
+            <View
+              style={{
+                backgroundColor: `${palette.danger}15`,
+                borderColor: palette.danger,
+                borderWidth: 1,
+                borderRadius: 16,
+                padding: 14,
+                marginVertical: 4,
+              }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                <HugeiconsIcon icon={Alert02Icon} size={18} color={palette.danger} strokeWidth={2.2} />
+                <RNText
+                  style={{
+                    color: palette.danger,
+                    fontSize: 14,
+                    fontWeight: '700',
+                    lineHeight: 18,
+                    includeFontPadding: false,
+                  }}>
+                  Falha ao cadastrar
+                </RNText>
+              </View>
+              <RNText
+                style={{
+                  color: palette.headline,
+                  fontSize: 12,
+                  lineHeight: 18,
+                  includeFontPadding: false,
+                  paddingLeft: 26,
+                }}>
                 {serverError}
-              </Text>
-            </VStack>
+              </RNText>
+            </View>
           )}
 
           {/* Botão de Envio */}

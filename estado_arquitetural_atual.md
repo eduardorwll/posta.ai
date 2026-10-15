@@ -112,12 +112,12 @@ posta-ai-app/
     │       ├── captura.tsx   # Tela de cadastro (fotos + validações inline + envio real)
     │       ├── produtos.tsx  # Catálogo com busca em tempo real + skeleton loader + pull-to-refresh
     │       └── configuracao.tsx # Menu completo de preferências (Aparência, IA, Canais, Conexão)
-    ├── components/           # AppHeader, ChipSelector, PhotoGrid, ProductCard
+    ├── components/           # AppHeader (RNText), ChipSelector, PhotoGrid, ProductCard (layout blindado)
     ├── constants/theme.ts    # Palettes, tokens semânticos e useAppTheme()
     ├── lib/
-    │   ├── api.ts            # Cliente HTTP dinâmico + testarConexaoApi()
+    │   ├── api.ts            # Cliente HTTP com normalização de URIs, detecção MIME e ApiException
     │   └── haptics.ts        # Módulo profundo de feedback tátil físico
-    ├── store/useApiConfigStore.ts # Store de endpoint com persistência em expo-secure-store
+    ├── store/useApiConfigStore.ts # Store de endpoint com padrão Tailscale (100.110.221.21:8000) e auto-migração
     ├── store/useThemeStore.ts # Store de tema com persistência em expo-secure-store
     ├── store/useProductStore.ts # Store de produtos com ações assíncronas
     └── types/product.ts      # Contratos canônicos sincronizados com o backend

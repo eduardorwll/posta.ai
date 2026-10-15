@@ -6,11 +6,8 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { Image } from 'expo-image';
-import { Pressable, View } from 'react-native';
+import { Pressable, Text as RNText, View } from 'react-native';
 
-import { HStack } from '@/components/ui/hstack';
-import { Text } from '@/components/ui/text';
-import { VStack } from '@/components/ui/vstack';
 import { useAppTheme } from '@/constants/theme';
 import { haptic } from '@/lib/haptics';
 import { CATEGORY_LABELS, CONDITION_LABELS, type Produto } from '@/types/product';
@@ -89,8 +86,8 @@ export function ProductCard({
         backgroundColor: palette.surface,
         borderColor: palette.border,
       }}
-      className="rounded-2xl p-3.5 border active:opacity-80">
-      <HStack className="gap-3">
+      className="rounded-2xl p-3 border active:opacity-80">
+      <View style={{ flexDirection: 'row', gap: 12 }}>
         {/* Foto de Capa do Produto */}
         <View
           style={{
@@ -99,6 +96,7 @@ export function ProductCard({
             borderRadius: 12,
             overflow: 'hidden',
             backgroundColor: palette.surfaceSubtle,
+            flexShrink: 0,
           }}>
           <Image
             source={{ uri: produto.fotos[0] }}
@@ -111,49 +109,96 @@ export function ProductCard({
         </View>
 
         {/* Informações Centrais do Produto */}
-        <VStack className="flex-1 justify-between py-0.5">
-          <VStack className="gap-0.5">
-            <HStack className="items-start justify-between gap-2">
-              <Text
+        <View style={{ flex: 1, justifyContent: 'space-between', paddingVertical: 1 }}>
+          <View>
+            {/* Linha de Título e Badge de Status */}
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8 }}>
+              <RNText
                 numberOfLines={1}
-                style={{ color: palette.headline }}
-                className="text-base font-bold flex-1">
+                style={{
+                  color: palette.headline,
+                  fontSize: 15,
+                  fontWeight: '700',
+                  lineHeight: 20,
+                  flex: 1,
+                  includeFontPadding: false,
+                }}>
                 {nome}
-              </Text>
+              </RNText>
 
-              {/* Badge de Status Semântico */}
+              {/* Badge de Status Semântico Bounded */}
               <View
-                style={{ backgroundColor: statusMeta.bgColor }}
-                className="flex-row items-center gap-1 px-2.5 py-0.5 rounded-full">
-                <HugeiconsIcon icon={statusMeta.icon} size={12} color={statusMeta.textColor} strokeWidth={2.4} />
-                <Text
-                  style={{ color: statusMeta.textColor }}
-                  className="text-[11px] font-bold">
+                style={{
+                  backgroundColor: statusMeta.bgColor,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                  paddingHorizontal: 8,
+                  paddingVertical: 3,
+                  borderRadius: 999,
+                  flexShrink: 0,
+                  alignSelf: 'flex-start',
+                }}>
+                <HugeiconsIcon icon={statusMeta.icon} size={11} color={statusMeta.textColor} strokeWidth={2.4} />
+                <RNText
+                  style={{
+                    color: statusMeta.textColor,
+                    fontSize: 10,
+                    fontWeight: '700',
+                    lineHeight: 13,
+                    includeFontPadding: false,
+                  }}>
                   {statusMeta.label}
-                </Text>
+                </RNText>
               </View>
-            </HStack>
+            </View>
 
-            <Text numberOfLines={1} style={{ color: palette.paragraphMuted }} className="text-xs">
+            {/* Subtítulo: Condição e Categoria */}
+            <RNText
+              numberOfLines={1}
+              style={{
+                color: palette.paragraphMuted,
+                fontSize: 12,
+                lineHeight: 16,
+                marginTop: 3,
+                includeFontPadding: false,
+              }}>
               {[CONDITION_LABELS[produto.condicao], CATEGORY_LABELS[produto.categoria]]
                 .filter(Boolean)
                 .join(' • ')}
-            </Text>
-          </VStack>
+            </RNText>
+          </View>
 
-          <HStack className="items-baseline justify-between pt-1">
-            <Text style={{ color: palette.highlight }} className="text-lg font-black tracking-tight">
+          {/* Linha Inferior: Preço e Observações */}
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 4 }}>
+            <RNText
+              style={{
+                color: palette.highlight,
+                fontSize: 16,
+                fontWeight: '900',
+                lineHeight: 20,
+                letterSpacing: -0.5,
+                includeFontPadding: false,
+              }}>
               {formatBRL(produto.preco_usuario)}
-            </Text>
+            </RNText>
 
             {produto.observacoes_usuario ? (
-              <Text numberOfLines={1} style={{ color: palette.paragraph }} className="text-xs max-w-[140px]">
+              <RNText
+                numberOfLines={1}
+                style={{
+                  color: palette.paragraph,
+                  fontSize: 11,
+                  lineHeight: 15,
+                  maxWidth: 130,
+                  includeFontPadding: false,
+                }}>
                 {produto.observacoes_usuario}
-              </Text>
+              </RNText>
             ) : null}
-          </HStack>
-        </VStack>
-      </HStack>
+          </View>
+        </View>
+      </View>
     </Pressable>
   );
 }

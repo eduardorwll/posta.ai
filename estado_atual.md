@@ -29,13 +29,14 @@
   - Resolução dinâmica de URLs para fotos sem hardcoded `localhost`.
   - Repositório `ProductRepository` isolando SQL de rotas HTTP.
 - **Mobile (Fase 3):**
-  - `src/lib/api.ts`: cliente HTTP com base URL dinâmica gerenciada pela store `useApiConfigStore`.
-  - `src/store/useApiConfigStore.ts`: store Zustand com persistência assíncrona via `expo-secure-store`, tendo `http://100.110.221.21:8000` (Tailscale) como padrão oficial do sistema.
+  - `src/lib/api.ts`: cliente HTTP com base URL dinâmica gerenciada pela store `useApiConfigStore`, normalização de URIs (`file://` / `content://`), detecção abrangente de MIME types (jpg, png, webp, heic) e correção de prototype chain em `ApiException` para suporte nativo em Hermes.
+  - `src/store/useApiConfigStore.ts`: store Zustand com persistência assíncrona via `expo-secure-store`, tendo `http://100.110.221.21:8000` (Tailscale) como padrão oficial do sistema e auto-migração de valores legados (`localhost:8000`).
   - `src/store/useThemeStore.ts`: store Zustand de tema com persistência assíncrona (`posta_ai_theme_mode`).
   - `src/app/(tabs)/configuracao.tsx`: menu completo de preferências com seções de Aparência conectada, IA/Anúncios, Canais de Venda e dropdown colapsável de Configurações Avançadas (Padrão / Personalizado), teste de conexão com latência e status HTTP.
   - `useProductStore.ts`: ações assíncronas `fetchProdutos()` e `cadastrarProduto()`, estados `isLoading` e `error`.
-  - `captura.tsx`: envio real para a API com feedback de loading (botão desabilitado + texto "Enviando...") e tratamento de erros.
-  - `produtos.tsx`: carregamento automático da API ao montar, Pull-to-Refresh, estados de loading/erro/vazio.
+  - `captura.tsx`: envio real para a API com feedback de loading, banner de erro com layout sem sobreposição (`Alert02Icon` + título e descrição estruturados) e mensagens descritivas de diagnóstico de rede.
+  - `produtos.tsx`: catálogo com busca em tempo real, Pull-to-Refresh, empty states com tipografia blindada contra sobreposição (`RNText`, `includeFontPadding: false`, `lineHeight` explícito).
+  - `ProductCard.tsx`: layout seguro com badge semântico delimitado (`flexShrink: 0`, altura e paddings fixos) e tipografia com line-height controlado sem truncamento ou colisão.
 - **Scripts e Ferramentas Locais:**
   - `dev-start` (`bun run dev`): orquestra inicialização do backend Docker e do Expo Metro com IP Tailscale (`100.110.221.21`).
   - `dev-stop` (`bun run dev:stop`): encerra com segurança o Expo Metro (porta 8081) e os containers Docker.

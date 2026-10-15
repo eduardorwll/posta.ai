@@ -1,8 +1,6 @@
 import { Image } from 'expo-image';
+import { Text as RNText, View } from 'react-native';
 
-import { HStack } from '@/components/ui/hstack';
-import { Text } from '@/components/ui/text';
-import { VStack } from '@/components/ui/vstack';
 import { useAppTheme } from '@/constants/theme';
 
 type AppHeaderProps = { subtitle?: string };
@@ -12,17 +10,36 @@ export function AppHeader({ subtitle }: AppHeaderProps) {
   const { palette } = useAppTheme();
 
   return (
-    <VStack className="gap-1">
-      <HStack className="items-center gap-2">
+    <View style={{ gap: 4 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <Image
           source={require('@/assets/images/isotipo.png')}
           contentFit="contain"
           accessibilityLabel="Isotipo posta.ai"
-          style={{ width: 48, height: 48 }}
+          style={{ width: 44, height: 44 }}
         />
-        <Text style={{ color: palette.headline }} className="text-3xl font-bold">posta.ai</Text>
-      </HStack>
-      {subtitle ? <Text style={{ color: palette.paragraph }} className="text-[15px]">{subtitle}</Text> : null}
-    </VStack>
+        <RNText
+          style={{
+            color: palette.headline,
+            fontSize: 28,
+            fontWeight: '800',
+            lineHeight: 34,
+            includeFontPadding: false,
+          }}>
+          posta.ai
+        </RNText>
+      </View>
+      {subtitle ? (
+        <RNText
+          style={{
+            color: palette.paragraph,
+            fontSize: 14,
+            lineHeight: 20,
+            includeFontPadding: false,
+          }}>
+          {subtitle}
+        </RNText>
+      ) : null}
+    </View>
   );
 }
