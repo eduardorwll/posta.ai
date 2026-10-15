@@ -1,32 +1,51 @@
 import { create } from 'zustand';
 
 import type { Produto } from '@/types/product';
+import { enviarProduto, obterProdutos, type EnviarProdutoParams } from '@/lib/api';
 
 export type NovoProduto = Pick<Produto, 'nome' | 'condicao' | 'categoria' | 'fotos' | 'observacoes_usuario' | 'preco_usuario'>;
 
 interface ProductState {
   produtos: Produto[];
-  addProduto: (produto: NovoProduto) => Produto;
+  isLoading: boolean;
+  error: string | null;
+  fetchProdutos: () => Promise<void>;
+  cadastrarProduto: (produto: EnviarProdutoParams) => Promise<Produto>;
+  clearError: () => void;
 }
 
-function generateId() {
-  return (
-    globalThis.crypto?.randomUUID?.() ??
-    `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
-  );
-}
-
-export const useProductStore = create<ProductState>((set) => ({
+export const useProductStore = create<ProductState>((set, get) => ({
   produtos: [],
-  addProduto: (novo) => {
-    const produto: Produto = {
-      ...novo,
-      id: generateId(),
-      created_at: new Date().toISOString(),
-      status: 'pendente',
-    };
-    // Mais recentes primeiro.
-    set((state) => ({ produtos: [produto, ...state.produtos] }));
-    return produto;
+  isLoading: false,
+  error: null,
+
+  fetchProdutos: async () => {
+    set({ isLoading: true, error: null });
+    try {
+      const produtos = await obterProdutos();
+      set({ produtos, isLoading: false });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao carregar produtos';
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
   },
+
+  cadastrarProduto: async (produto: EnviarProdutoParams) => {
+    set({ isLoading: true, error: null });
+    try {
+      const novoProduto = await enviarProduto(produto);
+      set((state) => ({
+        produtos: [novoProduto, ...state.produtos],
+        isLoading: false,
+      }));
+      return novoProduto;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao cadastrar produto';
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
+
+  clearError: () => set({ error: null }),
 }));

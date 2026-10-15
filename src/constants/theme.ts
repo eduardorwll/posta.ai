@@ -1,26 +1,27 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * Abaixo estão as cores utilizadas no aplicativo posta.ai.
+ * Suporta modo escuro e modo claro com a identidade visual do projeto.
  */
 
 import '@/global.css';
 
-import { Platform } from 'react-native';
+import { Platform, useColorScheme } from 'react-native';
+import { useThemeStore } from '../store/useThemeStore';
 
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#002926',
+    background: '#f2f7f5',
+    backgroundElement: '#ffffff',
+    backgroundSelected: '#e2ece9',
+    textSecondary: '#4a6f68',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: '#fffffe',
+    background: '#004643',
+    backgroundElement: '#001e1d',
+    backgroundSelected: '#003330',
+    textSecondary: '#abd1c6',
   },
 } as const;
 
@@ -64,20 +65,48 @@ export const Spacing = {
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;
 
-/** Paleta oficial do posta.ai (Redesign). */
-export const Palette = {
-  /** Fundo principal das telas. */
-  background: '#004643',
-  /** Superfícies secundárias: TabBar, cards, inputs, bordas fortes. */
-  surface: '#001e1d',
-  /** Títulos, preços e textos principais. */
-  headline: '#fffffe',
-  /** Labels, placeholders, textos secundários e aba inativa. */
-  paragraph: '#abd1c6',
-  /** CTA, borda de input em foco e aba ativa. */
-  highlight: '#f9bc60',
-  /** Texto sobre o botão principal. */
-  onHighlight: '#001e1d',
-  /** Ações destrutivas e status de erro. */
-  tertiary: '#e16162',
+export const Palettes = {
+  dark: {
+    background: '#004643',
+    surface: '#001e1d',
+    headline: '#fffffe',
+    paragraph: '#abd1c6',
+    highlight: '#f9bc60',
+    onHighlight: '#001e1d',
+    tertiary: '#e16162',
+    border: 'rgba(171, 209, 198, 0.2)',
+  },
+  light: {
+    background: '#f2f7f5',
+    surface: '#ffffff',
+    headline: '#002926',
+    paragraph: '#4a6f68',
+    highlight: '#004643',
+    onHighlight: '#ffffff',
+    tertiary: '#dc2626',
+    border: 'rgba(0, 70, 67, 0.12)',
+  },
 } as const;
+
+/** Paleta oficial padrão (dark) para compatibilidade retroativa. */
+export const Palette = Palettes.dark;
+
+export type AppPalette = typeof Palettes.dark;
+
+export function useAppTheme() {
+  const { themeMode } = useThemeStore();
+  const systemColorScheme = useColorScheme();
+
+  const isDark =
+    themeMode === 'system'
+      ? systemColorScheme !== 'light'
+      : themeMode !== 'light';
+
+  const palette = isDark ? Palettes.dark : Palettes.light;
+
+  return {
+    themeMode,
+    isDark,
+    palette,
+  };
+}

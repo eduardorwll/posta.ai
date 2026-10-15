@@ -1,58 +1,69 @@
 # Estado Atual do Projeto — posta.ai
 
-> Snapshot compilado em 2026-10-14. Fase 2 do app mobile concluída com suporte a qualidade máxima original (`quality: 1`, sem compressão). Pronto para a validação em dispositivo e subsequente início da Fase 3 (Backend FastAPI + PostgreSQL + Docker).
+> Snapshot compilado em 2026-10-15. Implementado o **Tema Claro Real e Funcional** com store Zustand (`useThemeStore`), persistência via `expo-secure-store`, hook `useAppTheme()` e paletas dinâmicas integradas em todas as telas, componentes e navegação.
 
 ---
 
 ## 1. Status Geral de Funcionamento
-- **Execução em Dispositivo:** **Aprovada.** O app está rodando de forma fluida no dispositivo móvel, sem travamento na Splash Screen.
-- **Gerenciador de Pacotes:** Migrado com sucesso de `npm` para **`bun`** (`bun.lock` gerado e `package-lock.json` removido).
+- **Execução em Dispositivo:** **Aprovada** (Fase 2). App roda de forma fluida no dispositivo móvel, sem travamento na Splash Screen.
+- **Tema Claro e Escuro Dinâmico:** Suporte completo a temas (`Escuro`, `Claro`, `Automático`), com persistência segura (`expo-secure-store`) e transição em tempo real na UI.
+- **Identidade Visual no Topo (`AppHeader.tsx`):** Isotipo ampliado para 48×48 px para maior destaque e presença visual da marca.
+- **Gerenciador de Pacotes:** **Bun** (`bun.lock`).
 - **Validação de Código:**
-  - `bunx tsc --noEmit`: 0 erros (compilação TypeScript 100% íntegra).
-  - `bunx expo lint`: 0 erros (apenas 18 warnings automáticos de import duplicado do Gluestack UI v5).
+  - `bunx tsc --noEmit`: 0 erros.
+  - `bunx expo lint`: 0 erros (18 warnings de boilerplate do Gluestack UI v5).
+- **Backend (Fase 3):**
+  - API FastAPI com PostgreSQL 16 Alpine via `docker-compose.yml`.
+  - Endpoints `POST /produtos` (multipart/form-data com fotos), `GET /produtos`, `GET /produtos/{id}`, `GET /health`.
+  - Persistência de fotos em disco local (`/app/storage/produtos/{id}/`), servidas via StaticFiles em `/storage`.
+  - Pool de conexões assíncrono com `psycopg[binary]` (sem ORM/SQLAlchemy).
+  - CORS liberado para todas as origens.
+  - Init SQL com `pgcrypto`, ENUMs e tabela `produtos` com UUID PK.
+- **Mobile (Fase 3):**
+  - `src/lib/api.ts`: cliente HTTP com base URL dinâmica gerenciada pela store `useApiConfigStore`.
+  - `src/store/useApiConfigStore.ts`: store Zustand com persistência assíncrona via `expo-secure-store`, tendo `http://100.110.221.21:8000` (Tailscale) como padrão oficial do sistema.
+  - `src/store/useThemeStore.ts`: store Zustand de tema com persistência assíncrona (`posta_ai_theme_mode`).
+  - `src/app/(tabs)/configuracao.tsx`: menu completo de preferências com seções de Aparência conectada, IA/Anúncios, Canais de Venda e dropdown colapsável de Configurações Avançadas (Padrão / Personalizado), teste de conexão com latência e status HTTP.
+  - `useProductStore.ts`: ações assíncronas `fetchProdutos()` e `cadastrarProduto()`, estados `isLoading` e `error`.
+  - `captura.tsx`: envio real para a API com feedback de loading (botão desabilitado + texto "Enviando...") e tratamento de erros.
+  - `produtos.tsx`: carregamento automático da API ao montar, Pull-to-Refresh, estados de loading/erro/vazio.
 - **Gerenciamento de Mídia:**
-  - Seleção de 1 a 5 fotos via câmera ou galeria com **qualidade original máxima** (`quality: 1`).
-  - **Compressão e redimensionamento removidos:** `src/lib/compress-image.ts` e o pacote `expo-image-manipulator` foram eliminados do projeto para preservar a integridade total das fotos destinadas aos anúncios online.
-  - Processamento sequencial mantido e recuperação de fotos após reinício da Activity no Android via `ImagePicker.getPendingResultAsync()`.
+  - Seleção de 1 a 5 fotos via câmera ou galeria com **qualidade original máxima** (`quality: 1`), sem compressão.
+  - Recuperação de fotos após reinício da Activity no Android via `ImagePicker.getPendingResultAsync()`.
 - **Scripts e Ferramentas Locais:**
-  - Inicialização do Expo: otimizada para execução direta via `bun expo start` / `bun start` e `bun run start:clean` (com flag `-c`).
-  - `open-omni`: script utilitário para subir o daemon do `omniroute` em segundo plano, iniciar o servidor de desenvolvimento Expo (`REACT_NATIVE_PACKAGER_HOSTNAME=100.110.221.21 bun expo start -c`) em background e abrir a TUI do `opencode` com permissões automáticas (`--auto`).
-  - `stop-omni` / `open-omni --stop`: encerra com segurança tanto o servidor OmniRoute quanto o servidor Expo e libera a porta `8081`.
+  - `open-omni`: sobe OmniRoute daemon + Expo (`REACT_NATIVE_PACKAGER_HOSTNAME=100.110.221.21 bun expo start -c`) + OpenCode TUI.
+  - `stop-omni`: encerra OmniRoute + Expo e libera a porta 8081.
 - **Diretrizes e Governança de Agentes:**
-  - Adicionada regra obrigatória em `AGENTS.md` e `CLAUDE.md` exigindo que qualquer agente de IA apresente previamente a lista detalhada do que será feito e aguarde a aprovação explícita do usuário antes de fazer qualquer alteração no projeto.
-  - Uso obrigatório de `bunx` em vez de `npx` devido à presença do `bun.lock`.
-  - Adicionada e configurada a skill de otimização de tokens do OmniRoute (`omni-compression`) tanto globalmente (`~/.agents/skills/omni-compression`) quanto no projeto (`.agents/skills/omni-compression`), com obrigatoriedade de uso para economia de tokens e compressão de logs de execução.
-  - Configurado o OpenCode com auto-aprovação de ferramentas (`"permission": "allow"` e flag `--auto`), blindado globalmente por `~/.config/opencode/GLOBAL_RULES.md` para garantir que o agente sempre requisite aprovação explícita antes de qualquer alteração.
+  - Aprovação prévia obrigatória antes de qualquer alteração (`AGENTS.md`, `CLAUDE.md`, `~/.config/opencode/GLOBAL_RULES.md`).
+  - Uso obrigatório de `bunx` em vez de `npx`.
+  - Skill `omni-compression` para economia de tokens.
 
 ---
 
 ## 2. Formulário e Interface Concluídos
 
-O app mobile possui o fluxo de cadastro e listagem completo:
-1. **Nome do Produto:** Campo de texto obrigatório (mínimo de 3 caracteres) no cadastro, exibido em destaque no card de listagem.
-2. **Condição do Produto:** Chips de seleção rápida (`Novo`, `Como novo`, `Seminovo`, `Usado`).
-3. **Categoria / Nicho:** Chips de seleção rápida (`Roupas e Acessórios`, `Eletrônicos`, `Livros`, `Instrumentos`, `Casa e Decoração`, `Diversos`).
-4. **Preço e Observações:** Campo com máscara/conversão em BRL e textarea para notas adicionais.
-5. **Card de Produto (`ProductCard.tsx`):**
-   - Miniatura da foto principal.
-   - Nome do produto.
-   - Linha sutil de contexto: `Condição • Categoria` (ex.: "Seminovo • Eletrônicos").
-   - Preço formatado em destaque (`#f9bc60`).
-   - Badge de status dinâmico (`Pendente`, `Processando`, `Pronto`, etc.).
-6. **Limpeza do Projeto:** Hooks legados órfãos, componentes não utilizados do template Expo e o módulo `expo-image-manipulator` foram removidos. A pasta de assets está padronizada em `assets/posta.ai.icon/`.
+O app mobile possui o fluxo de cadastro, listagem e menu de preferências completo, integrado ao backend e com suporte a tema claro/escuro:
+1. **Nome do Produto:** Campo de texto obrigatório (mínimo de 3 caracteres).
+2. **Condição do Produto:** Chips (`Novo`, `Como novo`, `Seminovo`, `Usado`).
+3. **Categoria / Nicho:** Chips (6 categorias).
+4. **Preço e Observações:** Campo com conversão em BRL e textarea.
+5. **Menu de Configurações (`configuracao.tsx`):** Ajuste de tema visual (`Escuro`, `Claro`, `Automático`), preferências de IA para anúncios, status de marketplaces parceiros e dropdown colapsável de Configurações Avançadas para ajuste do endpoint com padrão Tailscale (`100.110.221.21:8000`) ou endpoint personalizado.
+6. **Card de Produto (`ProductCard.tsx`):** Miniatura da foto principal, nome, linha `Condição • Categoria`, preço em destaque, badge de status dinâmico.
+7. **Envio Real:** `captura.tsx` envia dados + fotos via `multipart/form-data` para a API FastAPI.
+8. **Listagem Real:** `produtos.tsx` carrega produtos da API ao montar, com Pull-to-Refresh e estados de loading/erro/vazio.
 
 ---
 
-## 3. Pendência Imediata de Teste (Fase 2)
+## 3. Arquitetura de Backend (Fase 3)
 
-- **Validação em Aparelho:** Executar teste no dispositivo físico com development build, opção "Não manter atividades" (*Don't keep activities*) ativada, câmera e galeria com até 5 fotos em resolução total (`quality: 1`), monitorando via `adb logcat`.
-  - *Fallback arquitetural:* Se houver instabilidade por pressão de memória nativa com fotos pesadas (ex.: 50MP), a próxima etapa será persistir os arquivos originais diretamente em disco (`expo-file-system`) e gerar miniaturas leves para consumo da UI.
+- **Docker Compose:** Serviço `db` (PostgreSQL 16 Alpine) + `backend` (FastAPI Python 3.13-slim).
+- **Banco de Dados:** Tabela `produtos` com UUID PK (`gen_random_uuid()`), ENUMs de status/condição/categoria, índice em `created_at DESC`.
+- **API FastAPI:** `POST /produtos` (multipart), `GET /produtos`, `GET /produtos/{id}`, `GET /health`. Fotos servidas em `/storage` via StaticFiles.
+- **Cliente Mobile:** `src/lib/api.ts` com URL dinâmica obtida via `useApiConfigStore`.
 
 ---
 
-## 4. Próximo Marco: Fase 3 (Persistência & Backend)
+## 4. Próximos Passos
 
-Com o contrato de dados fechado no app:
-- **Infraestrutura:** `docker-compose.yml` com PostgreSQL 16 Alpine.
-- **API FastAPI:** Endpoints `POST /produtos` e `GET /produtos`.
-- **Integração:** Conectar o app ao backend para persistência duradoura.
+- **Teste de Integração:** Subir `docker-compose up --build` e testar o fluxo completo (configuração de endpoint → cadastro → listagem → Pull-to-Refresh) no dispositivo.
+- **Fase 4:** Enriquecimento com IA (descrição automática, sugestão de preço, publicação multi-canal).

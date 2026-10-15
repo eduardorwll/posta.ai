@@ -6,7 +6,7 @@ import { ActivityIndicator, Pressable, View } from 'react-native';
 import { HStack } from '@/components/ui/hstack';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
-import { Palette } from '@/constants/theme';
+import { useAppTheme } from '@/constants/theme';
 
 export type GridPhoto = { id: string; uri: string };
 
@@ -30,13 +30,14 @@ export function PhotoGrid({
   onAddFromLibrary,
   onRemove,
 }: PhotoGridProps) {
+  const { palette } = useAppTheme();
   const canAdd = photos.length < maxPhotos;
 
   return (
     <VStack className="gap-2">
-      <Text className="text-[15px] font-semibold text-[#fffffe]">
+      <Text style={{ color: palette.headline }} className="text-[15px] font-semibold">
         Fotos{' '}
-        <Text className="text-[#abd1c6]" style={{ fontVariant: ['tabular-nums'] }}>
+        <Text style={[{ color: palette.paragraph }, { fontVariant: ['tabular-nums'] }]}>
           ({photos.length}/{maxPhotos})
         </Text>
       </Text>
@@ -52,7 +53,7 @@ export function PhotoGrid({
                 width: '100%',
                 height: '100%',
                 borderRadius: 12,
-                backgroundColor: Palette.surface,
+                backgroundColor: palette.surface,
               }}
             />
             <Pressable
@@ -69,9 +70,9 @@ export function PhotoGrid({
                 borderRadius: 14,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: Palette.tertiary,
+                backgroundColor: palette.tertiary,
               }}>
-              <HugeiconsIcon icon={Delete02Icon} size={16} color={Palette.headline} strokeWidth={1.8} />
+              <HugeiconsIcon icon={Delete02Icon} size={16} color={palette.onHighlight} strokeWidth={1.8} />
             </Pressable>
           </View>
         ))}
@@ -96,8 +97,8 @@ export function PhotoGrid({
 
       {isProcessing && (
         <HStack className="items-center gap-2">
-          <ActivityIndicator color={Palette.highlight} />
-          <Text className="text-sm text-[#abd1c6]">Comprimindo fotos…</Text>
+          <ActivityIndicator color={palette.highlight} />
+          <Text style={{ color: palette.paragraph }} className="text-sm">Processando fotos…</Text>
         </HStack>
       )}
     </VStack>
@@ -115,28 +116,23 @@ function AddTile({
   onPress: () => void;
   disabled: boolean;
 }) {
+  const { palette } = useAppTheme();
+
   return (
     <Pressable
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
-      accessibilityLabel={`Adicionar foto pela ${label.toLowerCase()}`}
-      style={({ pressed }) => ({
+      accessibilityLabel={`Adicionar foto por ${label}`}
+      style={{
         width: TILE,
         height: TILE,
-        borderRadius: 12,
-        borderCurve: 'continuous',
-        borderWidth: 1.5,
-        borderStyle: 'dashed',
-        borderColor: Palette.paragraph,
-        backgroundColor: Palette.surface,
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: 6,
-        opacity: disabled ? 0.4 : pressed ? 0.7 : 1,
-      })}>
-      <HugeiconsIcon icon={icon} size={28} color={Palette.paragraph} strokeWidth={1.8} />
-      <Text className="text-xs text-[#abd1c6]">{label}</Text>
+        backgroundColor: palette.surface,
+        borderColor: palette.border,
+      }}
+      className="rounded-2xl border-2 border-dashed items-center justify-center gap-1 active:opacity-70">
+      <HugeiconsIcon icon={icon} size={24} color={palette.paragraph} strokeWidth={1.8} />
+      <Text style={{ color: palette.paragraph }} className="text-xs font-medium">{label}</Text>
     </Pressable>
   );
 }
