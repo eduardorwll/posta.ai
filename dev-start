@@ -6,7 +6,12 @@ set -e
 # 1. Backend Docker (PostgreSQL 16 + FastAPI) via ./backend-init
 # 2. Expo Metro Bundler configurado com IP Tailscale (100.110.221.21)
 
-SCRIPT_NAME="$(basename "$0")"
+# Não executar como root/sudo
+if [ "$EUID" -eq 0 ]; then
+  echo "❌ Não execute ./dev-start como root ou com sudo."
+  echo "   O Docker e o Expo Metro devem rodar com seu usuário comum."
+  exit 1
+fi
 
 # Carrega shims do mise se disponível
 if command -v mise >/dev/null 2>&1; then
@@ -15,6 +20,7 @@ fi
 
 EXPO_PID_FILE="/tmp/expo-posta-ai.pid"
 EXPO_LOG_FILE="/tmp/expo-posta-ai.log"
+TAILSCALE_IP="100.110.221.21"
 
 is_expo_running() {
   if curl -s http://localhost:8081/status 2>/dev/null | grep -q "packager-status:running"; then
@@ -23,25 +29,9 @@ is_expo_running() {
   return 1
 }
 
-# Parar serviços se solicitado
-if [ "$1" = "--stop" ] || [ "$1" = "stop" ] || [ "$SCRIPT_NAME" = "dev-stop" ] || [ "$SCRIPT_NAME" = "dev-stop.sh" ]; then
-  echo "Encerrando Expo Metro (porta 8081)..."
-  if [ -f "$EXPO_PID_FILE" ]; then
-    EXPO_PID=$(cat "$EXPO_PID_FILE")
-    if kill -0 "$EXPO_PID" 2>/dev/null; then
-      kill "$EXPO_PID" 2>/dev/null || true
-    fi
-    rm -f "$EXPO_PID_FILE"
-  fi
-  pkill -f "expo start" 2>/dev/null || true
-
-  if [ "$1" = "--all" ] || [ "$2" = "--all" ] || [ "$SCRIPT_NAME" = "dev-stop" ]; then
-    echo "Encerrando containers do backend..."
-    ./backend-init --stop || true
-  fi
-
-  echo "Ambiente de desenvolvimento encerrado com sucesso."
-  exit 0
+# Redireciona comando de parada para o dev-stop
+if [ "$1" = "--stop" ] || [ "$1" = "stop" ]; then
+  exec ./dev-stop
 fi
 
 # Status dos serviços
@@ -70,12 +60,20 @@ if [ -f "./backend-init" ]; then
   fi
 fi
 
-# 2. Inicia o Expo Metro
-TAILSCALE_IP="100.110.221.21"
+# 2. Limpa instâncias antigas do Expo se a porta 8081 já estiver ocupada
+if lsof -i :8081 >/dev/null 2>&1 || ss -lptn 'sport = :8081' 2>/dev/null | grep -q 8081; then
+  if ! is_expo_running; then
+    echo "Limpando processo residual na porta 8081..."
+    pkill -f "expo start" 2>/dev/null || true
+    sleep 1
+  fi
+fi
+
+# 3. Inicia o Expo Metro
 echo ""
 echo "Iniciando Expo Metro Bundler (IP Tailscale: $TAILSCALE_IP)..."
 
-if [ "$1" = "--background" ] || [ "$1" = "-d" ]; then
+if [ "$1" = "--background" ] || [ "$1" = "-d" ] || [ "$2" = "--background" ] || [ "$2" = "-d" ]; then
   if is_expo_running; then
     echo "🟢 Expo Metro já está em execução na porta 8081."
   else
@@ -83,7 +81,7 @@ if [ "$1" = "--background" ] || [ "$1" = "-d" ]; then
     echo $! > "$EXPO_PID_FILE"
     echo "🟢 Expo Metro iniciado em segundo plano (PID: $(cat "$EXPO_PID_FILE"), logs: $EXPO_LOG_FILE)."
   fi
-  echo "Para encerrar, execute: ./dev-stop"
+  echo "Para encerrar todo o ambiente, execute: ./dev-stop"
   exit 0
 fi
 

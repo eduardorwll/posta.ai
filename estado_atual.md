@@ -37,11 +37,10 @@
   - `captura.tsx`: envio real para a API com feedback de loading, banner de erro com layout sem sobreposição (`Alert02Icon` + título e descrição estruturados) e mensagens descritivas de diagnóstico de rede.
   - `produtos.tsx`: catálogo com busca em tempo real, Pull-to-Refresh, empty states com tipografia blindada contra sobreposição (`RNText`, `includeFontPadding: false`, `lineHeight` explícito).
   - `ProductCard.tsx`: layout seguro com badge semântico delimitado (`flexShrink: 0`, altura e paddings fixos) e tipografia com line-height controlado sem truncamento ou colisão.
-- **Scripts e Ferramentas Locais:**
-  - `dev-start` (`bun run dev`): orquestra inicialização do backend Docker e do Expo Metro com IP Tailscale (`100.110.221.21`).
-  - `dev-stop` (`bun run dev:stop`): encerra com segurança o Expo Metro (porta 8081) e os containers Docker.
-  - `backend-init` (`bun run backend:up`): gerencia containers Docker do PostgreSQL e FastAPI.
-  - `backend-stop` (`bun run backend:down`): encerra containers do backend.
+- **Scripts e Ferramentas Locais (Unificados):**
+  - `dev-start` (`bun start` ou `bun dev`): orquestra inicialização do Backend Docker e do Expo Metro com IP Tailscale (`100.110.221.21`), proteção contra execução acidental como root/sudo e limpeza preventiva da porta 8081.
+  - `dev-stop` (`bun stop` ou `bun run dev:stop`): encerra com segurança e de forma atômica o Expo Metro (porta 8081) e os containers Docker (`posta-ai-backend` e `posta-ai-db`).
+  - `metro.config.js`: configurado com `blockList` para ignorar `infra/` e `backend/`, prevenindo erros de permissão (`EACCES`) ao tentar monitorar volumes restritos do PostgreSQL (`pgdata`).
   - `bun run test:backend`: executa a suíte de testes assíncronos do backend (`pytest-asyncio`).
 
 ---

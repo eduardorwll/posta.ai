@@ -77,10 +77,8 @@ posta-ai-app/
 ├── estado_atual.md           # Snapshot resumido e compilado
 ├── AGENTS.md                 # Regras de governança de IA, aprovação prévia e padrões Expo
 ├── CLAUDE.md                 # Referência para Claude Code às diretrizes de AGENTS.md
-├── dev-start                 # Script de orquestração do ambiente de dev (Backend + Expo Metro)
-├── dev-stop                  # Script para encerramento de todos os serviços de dev
-├── backend-init              # Script bash para gerenciar containers Docker com healthcheck e logs
-├── backend-stop              # Symlink para encerramento dos containers do backend
+├── dev-start                 # Script mestre de início do ambiente (Backend Docker + Expo Metro)
+├── dev-stop                  # Script mestre de término atômico de todo o ambiente de dev
 ├── .agents/skills/           # Skills locais (api-scaffolding, fastapi-templates, ui-ux-pro-max, agent-rules-books)
 ├── backend/                  # API FastAPI (Python 3.13)
 │   ├── Dockerfile            # Container com dependências de build (gcc, libpq-dev)

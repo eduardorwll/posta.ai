@@ -1,1 +1,28 @@
-dev-start
+#!/usr/bin/env bash
+set -e
+
+# ─── posta.ai: Development Teardown Script ──────────────────────────────
+# Encerra todo o ecossistema de desenvolvimento:
+# 1. Expo Metro Bundler (porta 8081)
+# 2. Containers do Backend Docker (PostgreSQL 16 + FastAPI)
+
+EXPO_PID_FILE="/tmp/expo-posta-ai.pid"
+
+echo "Encerrando Expo Metro (porta 8081)..."
+if [ -f "$EXPO_PID_FILE" ]; then
+  EXPO_PID=$(cat "$EXPO_PID_FILE" 2>/dev/null || true)
+  if [ -n "$EXPO_PID" ] && kill -0 "$EXPO_PID" 2>/dev/null; then
+    kill "$EXPO_PID" 2>/dev/null || true
+  fi
+  rm -f "$EXPO_PID_FILE"
+fi
+
+pkill -f "expo start" 2>/dev/null || true
+fuser -k 8081/tcp 2>/dev/null || true
+
+if [ -f "./backend-init" ]; then
+  echo "Encerrando containers do backend..."
+  ./backend-init --stop || true
+fi
+
+echo "🟢 Ambiente de desenvolvimento encerrado com sucesso."
