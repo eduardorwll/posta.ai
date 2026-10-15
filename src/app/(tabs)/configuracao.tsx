@@ -6,8 +6,19 @@ import { useThemeStore, ThemeMode } from '@/store/useThemeStore';
 import { testarConexaoApi } from '@/lib/api';
 import { AppHeader } from '@/components/AppHeader';
 import { HugeiconsIcon } from '@hugeicons/react-native';
-import { CheckmarkCircle02Icon, Alert02Icon, RefreshIcon, ServerIcon, ArrowDown01Icon, ArrowUp01Icon, Settings01Icon, SparklesIcon, ShoppingBag01Icon } from '@hugeicons/core-free-icons';
+import {
+  CheckmarkCircle02Icon,
+  Alert02Icon,
+  RefreshIcon,
+  ServerIcon,
+  ArrowDown01Icon,
+  ArrowUp01Icon,
+  Settings01Icon,
+  SparklesIcon,
+  ShoppingBag01Icon,
+} from '@hugeicons/core-free-icons';
 import { MaxContentWidth, useAppTheme, Spacing } from '@/constants/theme';
+import { haptic } from '@/lib/haptics';
 
 export default function ConfiguracaoScreen() {
   const insets = useSafeAreaInsets();
@@ -48,16 +59,49 @@ export default function ConfiguracaoScreen() {
     }
   }, [isInitialized, initApiConfig]);
 
+  const handleThemeChange = (mode: ThemeMode) => {
+    haptic.selection();
+    setThemeMode(mode);
+  };
+
+  const handleTomVozChange = (tom: 'Direto' | 'Brechó' | 'Detalhado') => {
+    haptic.selection();
+    setTomVoz(tom);
+  };
+
+  const handleToggleSugestao = () => {
+    haptic.selection();
+    setSugestaoPreco(!sugestaoPreco);
+  };
+
+  const handleToggleAccordion = () => {
+    haptic.light();
+    setAdvancedOpen(!advancedOpen);
+  };
+
+  const handleUrlModeChange = (mode: 'Padrao' | 'Personalizado') => {
+    haptic.selection();
+    setUrlMode(mode);
+  };
+
   const handleTest = async () => {
+    haptic.light();
     setTesting(true);
     setTestResult(null);
     const targetUrl = urlMode === 'Padrao' ? tailscaleUrl : inputValue;
     const result = await testarConexaoApi(targetUrl);
     setTestResult(result);
     setTesting(false);
+
+    if (result.success) {
+      haptic.success();
+    } else {
+      haptic.error();
+    }
   };
 
   const handleSave = async () => {
+    haptic.medium();
     const targetUrl = urlMode === 'Padrao' ? tailscaleUrl : inputValue;
     await setApiUrl(targetUrl);
     setSavedMessage(true);
@@ -106,18 +150,18 @@ export default function ConfiguracaoScreen() {
               return (
                 <TouchableOpacity
                   key={item.value}
-                  onPress={() => setThemeMode(item.value as ThemeMode)}
+                  onPress={() => handleThemeChange(item.value as ThemeMode)}
                   style={{
                     backgroundColor: isSelected ? palette.highlight : palette.background,
                     borderColor: isSelected ? palette.highlight : palette.border,
                   }}
-                  className="flex-1 py-2.5 rounded-xl border items-center"
+                  className="flex-1 py-2.5 rounded-xl border items-center active:opacity-75"
                 >
                   <Text
                     style={{
                       color: isSelected ? palette.onHighlight : palette.paragraph,
                     }}
-                    className="text-xs font-semibold"
+                    className={`text-xs ${isSelected ? 'font-bold' : 'font-semibold'}`}
                   >
                     {item.label}
                   </Text>
@@ -140,18 +184,18 @@ export default function ConfiguracaoScreen() {
               return (
                 <TouchableOpacity
                   key={tom}
-                  onPress={() => setTomVoz(tom)}
+                  onPress={() => handleTomVozChange(tom)}
                   style={{
                     backgroundColor: isSelected ? palette.highlight : palette.background,
                     borderColor: isSelected ? palette.highlight : palette.border,
                   }}
-                  className="flex-1 py-2 rounded-xl border items-center"
+                  className="flex-1 py-2 rounded-xl border items-center active:opacity-75"
                 >
                   <Text
                     style={{
                       color: isSelected ? palette.onHighlight : palette.paragraph,
                     }}
-                    className="text-xs font-semibold"
+                    className={`text-xs ${isSelected ? 'font-bold' : 'font-semibold'}`}
                   >
                     {tom}
                   </Text>
@@ -161,9 +205,9 @@ export default function ConfiguracaoScreen() {
           </View>
 
           <TouchableOpacity
-            onPress={() => setSugestaoPreco(!sugestaoPreco)}
+            onPress={handleToggleSugestao}
             style={{ backgroundColor: palette.background, borderColor: palette.border }}
-            className="flex-row items-center justify-between p-3 rounded-xl border"
+            className="flex-row items-center justify-between p-3 rounded-xl border active:opacity-75"
           >
             <Text style={{ color: palette.headline }} className="text-sm font-medium">Sugestão de Preço de Mercado</Text>
             <View
@@ -200,8 +244,8 @@ export default function ConfiguracaoScreen() {
         {/* Seção Configurações Avançadas (Accordion) */}
         <View style={{ backgroundColor: palette.surface, borderColor: palette.border }} className="rounded-2xl mb-4 border overflow-hidden">
           <TouchableOpacity
-            onPress={() => setAdvancedOpen(!advancedOpen)}
-            className="p-4 flex-row items-center justify-between"
+            onPress={handleToggleAccordion}
+            className="p-4 flex-row items-center justify-between active:opacity-75"
           >
             <View className="flex-row items-center">
               <HugeiconsIcon icon={ServerIcon} size={22} color={palette.highlight} strokeWidth={2} />
@@ -224,18 +268,18 @@ export default function ConfiguracaoScreen() {
                   return (
                     <TouchableOpacity
                       key={mode}
-                      onPress={() => setUrlMode(mode)}
+                      onPress={() => handleUrlModeChange(mode)}
                       style={{
                         backgroundColor: isSelected ? palette.highlight : palette.background,
                         borderColor: isSelected ? palette.highlight : palette.border,
                       }}
-                      className="flex-1 py-2.5 rounded-xl border items-center"
+                      className="flex-1 py-2.5 rounded-xl border items-center active:opacity-75"
                     >
                       <Text
                         style={{
                           color: isSelected ? palette.onHighlight : palette.paragraph,
                         }}
-                        className="text-xs font-semibold"
+                        className={`text-xs ${isSelected ? 'font-bold' : 'font-semibold'}`}
                       >
                         {mode === 'Padrao' ? 'Padrão' : 'Personalizado'}
                       </Text>
@@ -249,7 +293,7 @@ export default function ConfiguracaoScreen() {
                   style={{ backgroundColor: palette.background, color: palette.headline, borderColor: palette.border }}
                   className="border rounded-xl px-4 py-3 text-base mb-4"
                   placeholder="http://192.168.1.50:8000"
-                  placeholderTextColor={palette.paragraph}
+                  placeholderTextColor={palette.paragraphMuted}
                   value={inputValue}
                   onChangeText={setInputValue}
                   autoCapitalize="none"
@@ -263,7 +307,7 @@ export default function ConfiguracaoScreen() {
                   onPress={handleTest}
                   disabled={testing}
                   style={{ backgroundColor: palette.background, borderColor: palette.highlight }}
-                  className="flex-1 border rounded-xl py-3 items-center justify-center flex-row"
+                  className="flex-1 border rounded-xl py-3 items-center justify-center flex-row active:opacity-75"
                 >
                   {testing ? (
                     <ActivityIndicator size="small" color={palette.highlight} />
@@ -278,16 +322,16 @@ export default function ConfiguracaoScreen() {
                 <TouchableOpacity
                   onPress={handleSave}
                   style={{ backgroundColor: palette.highlight }}
-                  className="flex-1 rounded-xl py-3 items-center justify-center shadow-lg"
+                  className="flex-1 rounded-xl py-3 items-center justify-center shadow-lg active:opacity-85"
                 >
                   <Text style={{ color: palette.onHighlight }} className="font-bold">Salvar</Text>
                 </TouchableOpacity>
               </View>
 
               {savedMessage && (
-                <View style={{ backgroundColor: palette.background, borderColor: 'rgba(52, 211, 153, 0.5)' }} className="mt-3 border rounded-xl p-3 flex-row items-center">
-                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} color="#34d399" strokeWidth={2} />
-                  <Text className="text-emerald-400 font-medium text-sm ml-2">Configuração salva com sucesso!</Text>
+                <View style={{ backgroundColor: palette.background, borderColor: palette.success }} className="mt-3 border rounded-xl p-3 flex-row items-center">
+                  <HugeiconsIcon icon={CheckmarkCircle02Icon} size={20} color={palette.success} strokeWidth={2} />
+                  <Text style={{ color: palette.success }} className="font-semibold text-sm ml-2">Configuração salva com sucesso!</Text>
                 </View>
               )}
             </View>
@@ -296,17 +340,22 @@ export default function ConfiguracaoScreen() {
 
         {testResult && (
           <View
-            style={{ backgroundColor: palette.surface, borderColor: testResult.success ? 'rgba(52, 211, 153, 0.4)' : `${palette.tertiary}40` }}
+            style={{
+              backgroundColor: palette.surface,
+              borderColor: testResult.success ? palette.success : palette.danger,
+            }}
             className="rounded-2xl p-4 mb-4 border"
           >
             <View className="flex-row items-center mb-2">
               <HugeiconsIcon
                 icon={testResult.success ? CheckmarkCircle02Icon : Alert02Icon}
                 size={22}
-                color={testResult.success ? '#34d399' : palette.tertiary}
+                color={testResult.success ? palette.success : palette.danger}
                 strokeWidth={2}
               />
-              <Text style={{ color: testResult.success ? '#34d399' : palette.tertiary }} className="font-bold text-base ml-2">
+              <Text
+                style={{ color: testResult.success ? palette.success : palette.danger }}
+                className="font-bold text-base ml-2">
                 {testResult.success ? 'Conexão Estabelecida' : 'Falha na Conexão'}
               </Text>
             </View>
@@ -320,7 +369,7 @@ export default function ConfiguracaoScreen() {
 
         {/* Seção Sobre */}
         <View style={{ backgroundColor: `${palette.surface}80`, borderColor: palette.border }} className="rounded-2xl p-4 items-center border">
-          <Text style={{ color: palette.paragraph }} className="text-xs font-medium">posta.ai v1.0.0 (Fase 3)</Text>
+          <Text style={{ color: palette.paragraphMuted }} className="text-xs font-medium">posta.ai v1.0.0 (Fase 3)</Text>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

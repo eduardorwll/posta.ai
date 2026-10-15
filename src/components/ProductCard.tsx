@@ -6,13 +6,14 @@ import {
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { Image } from 'expo-image';
+import { Pressable, View } from 'react-native';
 
-import { Badge, BadgeText } from '@/components/ui/badge';
 import { HStack } from '@/components/ui/hstack';
 import { Text } from '@/components/ui/text';
 import { VStack } from '@/components/ui/vstack';
 import { useAppTheme } from '@/constants/theme';
-import { CATEGORY_LABELS, CONDITION_LABELS, type Produto, type ProductStatus } from '@/types/product';
+import { haptic } from '@/lib/haptics';
+import { CATEGORY_LABELS, CONDITION_LABELS, type Produto } from '@/types/product';
 
 const currency = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' });
 
@@ -20,90 +21,139 @@ export function formatBRL(value: number) {
   return currency.format(value);
 }
 
-type StatusConfig = {
+type StatusMetadata = {
   label: string;
   icon: typeof AlarmClockIcon;
-  badgeClass: string;
-  textClass: string;
-  iconColor: string;
+  bgColor: string;
+  textColor: string;
 };
 
-const STATUS_CONFIG: Record<string, StatusConfig> = {
-  pendente: {
-    label: 'Pendente',
-    icon: AlarmClockIcon,
-    badgeClass: 'bg-[#f9bc60]',
-    textClass: 'text-[#001e1d]',
-    iconColor: '#001e1d',
-  },
-  em_processamento: {
-    label: 'Processando',
-    icon: Loading03Icon,
-    badgeClass: 'bg-[#22d3ee]',
-    textClass: 'text-[#001e1d]',
-    iconColor: '#001e1d',
-  },
-  pronto: {
-    label: 'Pronto',
-    icon: CheckmarkCircle02Icon,
-    badgeClass: 'bg-[#4ade80]',
-    textClass: 'text-[#001e1d]',
-    iconColor: '#001e1d',
-  },
-};
+function resolveStatusMetadata(status: string, palette: ReturnType<typeof useAppTheme>['palette']): StatusMetadata {
+  const normalized = status === 'processando_ia' ? 'em_processamento' : status;
 
-const STATUS_ALIASES: Partial<Record<ProductStatus, string>> = {
-  processando_ia: 'em_processamento',
-};
-
-const FALLBACK_STATUS: StatusConfig = {
-  label: 'Status',
-  icon: Alert02Icon,
-  badgeClass: 'bg-[#abd1c6]',
-  textClass: 'text-[#001e1d]',
-  iconColor: '#001e1d',
-};
-
-function getStatusConfig(status: string): StatusConfig {
-  const key = STATUS_ALIASES[status as ProductStatus] ?? status;
-  if (STATUS_CONFIG[key]) return STATUS_CONFIG[key];
-  const label = status.replace(/_/g, ' ');
-  return { ...FALLBACK_STATUS, label: label.charAt(0).toUpperCase() + label.slice(1) };
+  switch (normalized) {
+    case 'pendente':
+      return {
+        label: 'Pendente',
+        icon: AlarmClockIcon,
+        bgColor: palette.warning,
+        textColor: palette.onHighlight,
+      };
+    case 'em_processamento':
+      return {
+        label: 'Processando IA',
+        icon: Loading03Icon,
+        bgColor: '#0284c7',
+        textColor: '#ffffff',
+      };
+    case 'pronto':
+      return {
+        label: 'Anúncio Pronto',
+        icon: CheckmarkCircle02Icon,
+        bgColor: palette.success,
+        textColor: '#ffffff',
+      };
+    default:
+      return {
+        label: status.replace(/_/g, ' '),
+        icon: Alert02Icon,
+        bgColor: palette.surfaceSubtle,
+        textColor: palette.paragraph,
+      };
+  }
 }
 
-export function ProductCard({ produto }: { produto: Produto }) {
+export function ProductCard({
+  produto,
+  onPress,
+}: {
+  produto: Produto;
+  onPress?: () => void;
+}) {
   const { palette } = useAppTheme();
-  const status = getStatusConfig(produto.status);
+  const statusMeta = resolveStatusMetadata(produto.status, palette);
   const nome = produto.nome?.trim() || 'Produto sem título';
 
+  const handlePress = () => {
+    haptic.light();
+    onPress?.();
+  };
+
   return (
-    <HStack style={{ backgroundColor: palette.surface, borderColor: palette.border }} className="gap-3 rounded-2xl p-3 border">
-      <Image
-        source={{ uri: produto.fotos[0] }}
-        contentFit="cover"
-        accessibilityLabel="Foto do produto"
-        style={{ width: 88, height: 88, borderRadius: 12, backgroundColor: palette.background }}
-      />
-      <VStack className="flex-1 justify-between gap-1">
-        <Text numberOfLines={1} style={{ color: palette.headline }} className="text-base font-semibold">
-          {nome}
-        </Text>
-        <Text numberOfLines={1} style={{ color: palette.paragraph }} className="text-xs">
-          {[CONDITION_LABELS[produto.condicao], CATEGORY_LABELS[produto.categoria]]
-            .filter(Boolean)
-            .join(' • ')}
-        </Text>
-        <Text style={{ color: palette.highlight }} className="text-lg font-bold">{formatBRL(produto.preco_usuario)}</Text>
-        {produto.observacoes_usuario ? (
-          <Text numberOfLines={2} style={{ color: palette.paragraph }} className="text-sm">
-            {produto.observacoes_usuario}
-          </Text>
-        ) : null}
-      </VStack>
-      <Badge className={`${status.badgeClass} self-start flex-row items-center gap-1.5 px-2.5 py-1 rounded-full`}>
-        <HugeiconsIcon icon={status.icon} size={14} color={status.iconColor} strokeWidth={2.2} />
-        <BadgeText className={`${status.textClass} text-xs font-bold`}>{status.label}</BadgeText>
-      </Badge>
-    </HStack>
+    <Pressable
+      onPress={handlePress}
+      disabled={!onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`Produto: ${nome}, preço ${formatBRL(produto.preco_usuario)}`}
+      style={{
+        backgroundColor: palette.surface,
+        borderColor: palette.border,
+      }}
+      className="rounded-2xl p-3.5 border active:opacity-80">
+      <HStack className="gap-3">
+        {/* Foto de Capa do Produto */}
+        <View
+          style={{
+            width: 88,
+            height: 88,
+            borderRadius: 12,
+            overflow: 'hidden',
+            backgroundColor: palette.surfaceSubtle,
+          }}>
+          <Image
+            source={{ uri: produto.fotos[0] }}
+            contentFit="cover"
+            transition={200}
+            cachePolicy="memory-disk"
+            accessibilityLabel={`Foto de ${nome}`}
+            style={{ width: '100%', height: '100%' }}
+          />
+        </View>
+
+        {/* Informações Centrais do Produto */}
+        <VStack className="flex-1 justify-between py-0.5">
+          <VStack className="gap-0.5">
+            <HStack className="items-start justify-between gap-2">
+              <Text
+                numberOfLines={1}
+                style={{ color: palette.headline }}
+                className="text-base font-bold flex-1">
+                {nome}
+              </Text>
+
+              {/* Badge de Status Semântico */}
+              <View
+                style={{ backgroundColor: statusMeta.bgColor }}
+                className="flex-row items-center gap-1 px-2.5 py-0.5 rounded-full">
+                <HugeiconsIcon icon={statusMeta.icon} size={12} color={statusMeta.textColor} strokeWidth={2.4} />
+                <Text
+                  style={{ color: statusMeta.textColor }}
+                  className="text-[11px] font-bold">
+                  {statusMeta.label}
+                </Text>
+              </View>
+            </HStack>
+
+            <Text numberOfLines={1} style={{ color: palette.paragraphMuted }} className="text-xs">
+              {[CONDITION_LABELS[produto.condicao], CATEGORY_LABELS[produto.categoria]]
+                .filter(Boolean)
+                .join(' • ')}
+            </Text>
+          </VStack>
+
+          <HStack className="items-baseline justify-between pt-1">
+            <Text style={{ color: palette.highlight }} className="text-lg font-black tracking-tight">
+              {formatBRL(produto.preco_usuario)}
+            </Text>
+
+            {produto.observacoes_usuario ? (
+              <Text numberOfLines={1} style={{ color: palette.paragraph }} className="text-xs max-w-[140px]">
+                {produto.observacoes_usuario}
+              </Text>
+            ) : null}
+          </HStack>
+        </VStack>
+      </HStack>
+    </Pressable>
   );
 }

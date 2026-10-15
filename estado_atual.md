@@ -1,11 +1,18 @@
 # Estado Atual do Projeto — posta.ai
 
-> Snapshot compilado em 2026-10-15. Implementado o **Tema Claro Real e Funcional** com store Zustand (`useThemeStore`), persistência via `expo-secure-store`, hook `useAppTheme()` e paletas dinâmicas integradas em todas as telas, componentes e navegação.
+> Snapshot compilado em 2026-10-15. Implementada a **UI Nativa de Alta Fidelidade (Deep-Native Approach)** orientada pelas regras de engenharia de `ciembor/agent-rules-books` e inteligência de design de `ui-ux-pro-max`:
+> - **Design Tokens Semânticos (`src/constants/theme.ts`):** `success`, `warning`, `danger`, `surfaceSubtle`, `borderSubtle`, `badgeCover`.
+> - **Feedback Háptico Físico (`src/lib/haptics.ts` via `expo-haptics`):** microvibrações táteis em seleções de chips, exclusões, envio de formulário, testes de rede e pull-to-refresh.
+> - **Foto de Capa Destacada (`PhotoGrid.tsx`):** badge visual `CAPA` para o índice 0 e área acessível de toque (44×44 pt).
+> - **Cards de Produto (`ProductCard.tsx`):** badges de status semânticos (`Pendente`, `Processando IA`, `Anúncio Pronto`), cache de disco/memória e transição suave.
+> - **Catálogo com Busca em Tempo Real (`produtos.tsx`):** filtro instantâneo por nome/categoria/detalhes, skeleton loading e empty states acionáveis.
+> - **Formulário de Captura (`captura.tsx`):** validações visuais inline com `palette.danger`, teclado `decimal-pad` para preço e scroll suave com teclado.
 
 ---
 
 ## 1. Status Geral de Funcionamento
 - **Execução em Dispositivo:** **Aprovada** (Fase 2). App roda de forma fluida no dispositivo móvel, sem travamento na Splash Screen.
+- **UI Nativa de Alta Fidelidade & Haptics:** Suporte completo a feedback físico (`expo-haptics`), tokens semânticos e busca instantânea.
 - **Tema Claro e Escuro Dinâmico:** Suporte completo a temas (`Escuro`, `Claro`, `Automático`), com persistência segura (`expo-secure-store`) e transição em tempo real na UI.
 - **Identidade Visual no Topo (`AppHeader.tsx`):** Isotipo ampliado para 48×48 px para maior destaque e presença visual da marca.
 - **Gerenciador de Pacotes:** **Bun** (`bun.lock`).

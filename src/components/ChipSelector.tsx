@@ -3,6 +3,7 @@ import { Pressable } from 'react-native';
 import { HStack } from '@/components/ui/hstack';
 import { Text } from '@/components/ui/text';
 import { useAppTheme } from '@/constants/theme';
+import { haptic } from '@/lib/haptics';
 
 interface ChipSelectorProps<T extends string> {
   options: Record<T, string>;
@@ -13,6 +14,13 @@ interface ChipSelectorProps<T extends string> {
 export function ChipSelector<T extends string>({ options, value, onChange }: ChipSelectorProps<T>) {
   const { palette } = useAppTheme();
 
+  const handleSelect = (key: T) => {
+    if (key !== value) {
+      haptic.selection();
+      onChange(key);
+    }
+  };
+
   return (
     <HStack className="flex-wrap gap-2">
       {(Object.keys(options) as T[]).map((key) => {
@@ -22,17 +30,17 @@ export function ChipSelector<T extends string>({ options, value, onChange }: Chi
             key={key}
             accessibilityRole="button"
             accessibilityState={{ selected }}
-            onPress={() => onChange(key)}
+            onPress={() => handleSelect(key)}
             style={{
               backgroundColor: selected ? palette.highlight : palette.surface,
               borderColor: selected ? palette.highlight : palette.border,
             }}
-            className="rounded-full border px-4 py-2">
+            className="rounded-full border px-4 py-2 active:opacity-75">
             <Text
               style={{
                 color: selected ? palette.onHighlight : palette.paragraph,
               }}
-              className={`text-sm ${selected ? 'font-semibold' : ''}`}>
+              className={`text-sm ${selected ? 'font-bold' : 'font-medium'}`}>
               {options[key]}
             </Text>
           </Pressable>

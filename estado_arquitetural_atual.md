@@ -113,8 +113,10 @@ posta-ai-app/
     │       ├── produtos.tsx  # Listagem da API + Pull-to-Refresh com palette dinâmica
     │       └── configuracao.tsx # Tela de configuração de tema, IA, canais e endpoint com palette dinâmica
     ├── components/           # AppHeader, ChipSelector, PhotoGrid, ProductCard
-    ├── constants/theme.ts    # Palettes (dark/light), useAppTheme() hook e tokens
-    ├── lib/api.ts            # Cliente HTTP dinâmico + testarConexaoApi()
+    ├── constants/theme.ts    # Palettes (dark/light), useAppTheme() hook e tokens semânticos
+    ├── lib/
+    │   ├── api.ts            # Cliente HTTP dinâmico + testarConexaoApi()
+    │   └── haptics.ts        # Utilitário de feedback físico tátil (expo-haptics)
     ├── store/useApiConfigStore.ts # Store Zustand com persistência em expo-secure-store
     ├── store/useThemeStore.ts # Store Zustand de tema com persistência em expo-secure-store
     ├── store/useProductStore.ts # Store Zustand com ações assíncronas (fetch/cadastrar)
@@ -126,16 +128,17 @@ posta-ai-app/
 
 | Arquivo | Responsabilidade |
 |---|---|
-| `src/app/_layout.tsx` | Provider Gluestack em modo dinâmico, tema de navegação com a paleta dinâmica, `StatusBar` dinâmica, `Stack` sem header. Inicialização do tema via `useThemeStore`. |
+| `src/app/_layout.tsx` | Provider Gluestack em modo dinâmico, tema de navegação com a paleta dinâmica, `StatusBar` dinâmica, `Stack` sem header. Inicialização do tema via `useThemeStore` e da API via `useApiConfigStore`. |
 | `src/app/(tabs)/_layout.tsx` | `Tabs` do Expo Router com ícones Hugeicons; TabBar e cores dinâmicas via `useAppTheme()`. |
-| `src/app/(tabs)/captura.tsx` | Permissões, captura (câmera/galeria com `quality: 1`), `processAssets` sem compressão, formulário completo com paleta dinâmica e validação. |
-| `src/app/(tabs)/produtos.tsx` | `FlatList` produtos da API com Pull-to-Refresh e estado vazio estilizado com `PackageIcon` e paleta dinâmica. |
-| `src/app/(tabs)/configuracao.tsx` | Menu de preferências com seções de Aparência conectada (`Escuro`, `Claro`, `Automático`), IA/Anúncios, Canais de Venda e dropdown colapsável de Configurações Avançadas. |
-| `src/components/ChipSelector.tsx` | Componente reutilizável de seleção em chips com paleta dinâmica. |
-| `src/components/PhotoGrid.tsx` | Grid de fotos com preview (`expo-image`), botões Câmera/Galeria, exclusão individual e paleta dinâmica. |
-| `src/components/ProductCard.tsx` | Card com miniatura, título, linha `"Condição • Categoria"`, preço e badge de status dinâmico com paleta dinâmica. |
+| `src/app/(tabs)/captura.tsx` | Permissões, captura (câmera/galeria com `quality: 1`), formulário com validações inline (`palette.danger`), teclado decimal e feedback háptico. |
+| `src/app/(tabs)/produtos.tsx` | `FlatList` com busca instantânea em memória, skeleton loader, empty states acionáveis, Pull-to-Refresh e feedback tátil. |
+| `src/app/(tabs)/configuracao.tsx` | Menu de preferências com seções de Aparência conectada (`Escuro`, `Claro`, `Automático`), IA/Anúncios, Canais de Venda e Configurações Avançadas com haptics e status semânticos. |
+| `src/components/ChipSelector.tsx` | Componente reutilizável de seleção em chips com paleta dinâmica e feedback tátil `haptic.selection()`. |
+| `src/components/PhotoGrid.tsx` | Grid de fotos com destaque visual de Foto de Capa (índice 0), preview (`expo-image`), exclusão individual e feedback háptico. |
+| `src/components/ProductCard.tsx` | Card com miniatura, título, linha `"Condição • Categoria"`, preço, badges de status semânticos, cache de disco/memória e resposta tátil ao toque. |
 | `src/components/AppHeader.tsx` | Isotipo (`isotipo.png` em 48×48 px) + título "posta.ai" + subtítulo opcional com paleta dinâmica. |
-| `src/lib/api.ts` | Cliente HTTP com URL dinâmica obtida via `useApiConfigStore` e função `testarConexaoApi()`. |
+| `src/lib/haptics.ts` | Módulo profundo encapsulando `expo-haptics` com tratamento à prova de falhas para Web/Android/iOS. |
+| `src/lib/api.ts` | Cliente HTTP com URL dinâmica obtida via `useApiConfigStore`, upload multipart de fotos e função `testarConexaoApi()`. |
 | `src/store/useApiConfigStore.ts` | Store Zustand com persistência assíncrona via `expo-secure-store`, padrão Tailscale `100.110.221.21:8000`. |
 | `src/store/useThemeStore.ts` | Store Zustand de tema com persistência assíncrona via `expo-secure-store` (`posta_ai_theme_mode`). |
 | `src/store/useProductStore.ts` | Store Zustand com ações assíncronas: `fetchProdutos()`, `cadastrarProduto()`, estados `isLoading` e `error`. |

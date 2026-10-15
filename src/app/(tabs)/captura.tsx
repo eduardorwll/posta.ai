@@ -26,9 +26,10 @@ import { Input, InputField } from '@/components/ui/input';
 import { Text } from '@/components/ui/text';
 import { Textarea, TextareaInput } from '@/components/ui/textarea';
 import { VStack } from '@/components/ui/vstack';
-import { MaxContentWidth, useAppTheme, Spacing } from '@/constants/theme';
-import { useProductStore } from '@/store/useProductStore';
+import { MaxContentWidth, Spacing, useAppTheme } from '@/constants/theme';
 import { ApiException } from '@/lib/api';
+import { haptic } from '@/lib/haptics';
+import { useProductStore } from '@/store/useProductStore';
 import {
   CATEGORY_LABELS,
   CONDITION_LABELS,
@@ -37,18 +38,23 @@ import {
 } from '@/types/product';
 
 const MAX_PHOTOS = 5;
-
+const MIN_NAME_LENGTH = 3;
 type PhotoSource = 'camera' | 'library';
 
-const MIN_NAME_LENGTH = 3;
-
-function parsePrice(raw: string) {
+function parsePrice(raw: string): number {
   const text = raw.trim();
   if (!text) return NaN;
   const normalized = text.includes(',') ? text.replace(/\./g, '').replace(',', '.') : text;
   return Number(normalized);
 }
 
+/**
+ * Tela de captura e catalogação de produtos:
+ * - Fotos em resolução original máxima (quality: 1)
+ * - Identificação visual da Foto de Capa (índice 0)
+ * - Validações visuais inline com mensagens semânticas
+ * - Feedback físico háptico ao salvar e validar (Clean Code + Release It!)
+ */
 export default function CapturaScreen() {
   const insets = useSafeAreaInsets();
   const { cadastrarProduto, isLoading, clearError } = useProductStore();
@@ -61,16 +67,18 @@ export default function CapturaScreen() {
   const [price, setPrice] = useState('');
   const [notes, setNotes] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [serverError, setServerError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
   const remaining = MAX_PHOTOS - photos.length;
-  const nomeInvalid = submitted && nome.trim().length < MIN_NAME_LENGTH;
   const priceValue = parsePrice(price);
-  const priceInvalid = submitted && !(priceValue > 0);
-  const photosInvalid = submitted && photos.length === 0;
 
-  async function ensurePermission(source: PhotoSource) {
+  // Regras de validação (Clean Code / Single Level of Abstraction)
+  const isNomeInvalid = submitted && nome.trim().length < MIN_NAME_LENGTH;
+  const isPriceInvalid = submitted && !(priceValue > 0);
+  const isPhotosInvalid = submitted && photos.length === 0;
+
+  async function ensurePermission(source: PhotoSource): Promise<boolean> {
     const response =
       source === 'camera'
         ? await ImagePicker.requestCameraPermissionsAsync()
@@ -81,7 +89,7 @@ export default function CapturaScreen() {
     const target = source === 'camera' ? 'à câmera' : 'às fotos';
     Alert.alert(
       'Permissão necessária',
-      `Para cadastrar produtos, permita o acesso ${target} nas configurações do aparelho.`,
+      `Para catalogar produtos, permita o acesso ${target} nas configurações do seu celular.`,
       response.canAskAgain
         ? [{ text: 'OK' }]
         : [
@@ -95,14 +103,15 @@ export default function CapturaScreen() {
   async function processAssets(assets: ImagePicker.ImagePickerAsset[]) {
     setIsProcessing(true);
     try {
-      const newPhotos: GridPhoto[] = [];
-      for (const asset of assets) {
-        newPhotos.push({ uri: asset.uri, id: `${Date.now()}-${newPhotos.length}` });
-      }
+      const newPhotos: GridPhoto[] = assets.map((asset, idx) => ({
+        uri: asset.uri,
+        id: `${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+      }));
+
       setPhotos((current) => [...current, ...newPhotos].slice(0, MAX_PHOTOS));
     } catch (e) {
       console.error('Falha ao processar fotos', e);
-      setError('Não foi possível processar as fotos. Tente novamente.');
+      setServerError('Não foi possível carregar a imagem. Tente novamente.');
     } finally {
       setIsProcessing(false);
     }
@@ -124,7 +133,7 @@ export default function CapturaScreen() {
 
   async function pickPhotos(source: PhotoSource) {
     if (remaining <= 0) return;
-    setError(null);
+    setServerError(null);
 
     if (!(await ensurePermission(source))) return;
 
@@ -140,7 +149,6 @@ export default function CapturaScreen() {
           });
 
     if (result.canceled) return;
-
     await processAssets(result.assets.slice(0, remaining));
   }
 
@@ -156,38 +164,43 @@ export default function CapturaScreen() {
     setPrice('');
     setNotes('');
     setSubmitted(false);
-    setError(null);
+    setServerError(null);
     clearError();
   }
 
   async function onSubmit() {
     Keyboard.dismiss();
     setSubmitted(true);
-    setError(null);
+    setServerError(null);
 
     const trimmedName = nome.trim();
-    if (trimmedName.length < MIN_NAME_LENGTH || !(priceValue > 0) || photos.length === 0) {
+    const isValid = trimmedName.length >= MIN_NAME_LENGTH && priceValue > 0 && photos.length > 0;
+
+    if (!isValid) {
+      haptic.error();
       return;
     }
 
     try {
-      const trimmedNotes = notes.trim();
+      haptic.light();
       await cadastrarProduto({
         nome: trimmedName,
         condicao,
         categoria,
         preco_usuario: priceValue,
-        observacoes_usuario: trimmedNotes,
+        observacoes_usuario: notes.trim(),
         fotos: photos.map((p) => p.uri),
       });
 
-      Alert.alert('Sucesso', 'Produto cadastrado com sucesso!', [
+      haptic.success();
+      Alert.alert('Sucesso!', 'Produto cadastrado com sucesso no catálogo.', [
         { text: 'OK', onPress: resetForm },
       ]);
     } catch (e) {
+      haptic.error();
       const message =
-        e instanceof ApiException ? e.message : 'Não foi possível cadastrar o produto. Tente novamente.';
-      setError(message);
+        e instanceof ApiException ? e.message : 'Não foi possível salvar o produto. Verifique sua conexão.';
+      setServerError(message);
     }
   }
 
@@ -199,83 +212,96 @@ export default function CapturaScreen() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
           paddingTop: insets.top + Spacing.three,
-          paddingBottom: insets.bottom + Spacing.four,
+          paddingBottom: insets.bottom + Spacing.five,
           paddingHorizontal: Spacing.four,
           maxWidth: MaxContentWidth,
           width: '100%',
           alignSelf: 'center',
         }}
         showsVerticalScrollIndicator={false}>
-        <AppHeader subtitle="Cadastre um novo item para venda" />
+        <AppHeader subtitle="Cadastre um novo item com fotos de alta qualidade" />
         <View style={{ height: Spacing.three }} />
 
-        <VStack className="gap-4">
-          <PhotoGrid
-            photos={photos}
-            maxPhotos={MAX_PHOTOS}
-            isProcessing={isProcessing}
-            onAddFromCamera={() => pickPhotos('camera')}
-            onAddFromLibrary={() => pickPhotos('library')}
-            onRemove={removePhoto}
-          />
-          {photosInvalid && (
-            <Text style={{ color: palette.tertiary }} className="text-xs font-medium">
-              Adicione pelo menos 1 foto do produto.
-            </Text>
-          )}
+        <VStack className="gap-5">
+          {/* Seletor de Fotos com Foto de Capa */}
+          <VStack className="gap-1.5">
+            <PhotoGrid
+              photos={photos}
+              maxPhotos={MAX_PHOTOS}
+              isProcessing={isProcessing}
+              onAddFromCamera={() => pickPhotos('camera')}
+              onAddFromLibrary={() => pickPhotos('library')}
+              onRemove={removePhoto}
+            />
+            {isPhotosInvalid && (
+              <Text style={{ color: palette.danger }} className="text-xs font-semibold px-0.5">
+                É obrigatório adicionar pelo menos 1 foto do produto.
+              </Text>
+            )}
+          </VStack>
 
-          <FormControl isInvalid={nomeInvalid}>
+          {/* Nome do Produto */}
+          <FormControl isInvalid={isNomeInvalid}>
             <FormControlLabel>
-              <FormControlLabelText style={{ color: palette.paragraph }} className="text-[15px] font-semibold">
-                Nome do Produto <Text style={{ color: palette.highlight }}>*</Text>
+              <FormControlLabelText style={{ color: palette.paragraph }} className="text-[14px] font-semibold">
+                Título do Item <Text style={{ color: palette.highlight }}>*</Text>
               </FormControlLabelText>
             </FormControlLabel>
             <Input
-              style={{ backgroundColor: palette.surface, borderColor: nomeInvalid ? palette.tertiary : palette.border }}
-              className="rounded-xl border h-12 px-3">
+              style={{
+                backgroundColor: palette.surface,
+                borderColor: isNomeInvalid ? palette.danger : palette.border,
+              }}
+              className="rounded-2xl border h-13 px-3.5">
               <InputField
                 style={{ color: palette.headline }}
-                placeholder="Ex.: Jaqueta Jeans Vintage Levi's"
-                placeholderTextColor={palette.paragraph}
+                placeholder="Ex.: Jaqueta Jeans Vintage Levi's Original"
+                placeholderTextColor={palette.paragraphMuted}
                 value={nome}
                 onChangeText={setNome}
                 returnKeyType="next"
               />
             </Input>
             <FormControlError>
-              <FormControlErrorText style={{ color: palette.tertiary }} className="text-xs">
-                Informe o nome do produto (mínimo de 3 caracteres).
+              <FormControlErrorText style={{ color: palette.danger }} className="text-xs font-medium">
+                O título precisa ter pelo menos 3 caracteres.
               </FormControlErrorText>
             </FormControlError>
           </FormControl>
 
+          {/* Condição do Item */}
           <VStack className="gap-2">
-            <Text style={{ color: palette.paragraph }} className="text-[15px] font-semibold">
+            <Text style={{ color: palette.paragraph }} className="text-[14px] font-semibold">
               Condição <Text style={{ color: palette.highlight }}>*</Text>
             </Text>
             <ChipSelector options={CONDITION_LABELS} value={condicao} onChange={setCondicao} />
           </VStack>
 
+          {/* Categoria / Nicho */}
           <VStack className="gap-2">
-            <Text style={{ color: palette.paragraph }} className="text-[15px] font-semibold">
-              Categoria / Nicho <Text style={{ color: palette.highlight }}>*</Text>
+            <Text style={{ color: palette.paragraph }} className="text-[14px] font-semibold">
+              Categoria Principal <Text style={{ color: palette.highlight }}>*</Text>
             </Text>
             <ChipSelector options={CATEGORY_LABELS} value={categoria} onChange={setCategoria} />
           </VStack>
 
-          <FormControl isInvalid={priceInvalid}>
+          {/* Preço de Venda */}
+          <FormControl isInvalid={isPriceInvalid}>
             <FormControlLabel>
-              <FormControlLabelText style={{ color: palette.paragraph }} className="text-[15px] font-semibold">
-                Valor Desejado (R$) <Text style={{ color: palette.highlight }}>*</Text>
+              <FormControlLabelText style={{ color: palette.paragraph }} className="text-[14px] font-semibold">
+                Preço Desejado (R$) <Text style={{ color: palette.highlight }}>*</Text>
               </FormControlLabelText>
             </FormControlLabel>
             <Input
-              style={{ backgroundColor: palette.surface, borderColor: priceInvalid ? palette.tertiary : palette.border }}
-              className="rounded-xl border h-12 px-3">
+              style={{
+                backgroundColor: palette.surface,
+                borderColor: isPriceInvalid ? palette.danger : palette.border,
+              }}
+              className="rounded-2xl border h-13 px-3.5">
               <InputField
                 style={{ color: palette.headline }}
                 placeholder="0,00"
-                placeholderTextColor={palette.paragraph}
+                placeholderTextColor={palette.paragraphMuted}
                 value={price}
                 onChangeText={setPrice}
                 keyboardType="decimal-pad"
@@ -283,25 +309,26 @@ export default function CapturaScreen() {
               />
             </Input>
             <FormControlError>
-              <FormControlErrorText style={{ color: palette.tertiary }} className="text-xs">
-                Informe um valor válido maior que zero.
+              <FormControlErrorText style={{ color: palette.danger }} className="text-xs font-medium">
+                Informe um valor numérico válido maior que zero.
               </FormControlErrorText>
             </FormControlError>
           </FormControl>
 
+          {/* Observações Livres */}
           <FormControl>
             <FormControlLabel>
-              <FormControlLabelText style={{ color: palette.paragraph }} className="text-[15px] font-semibold">
-                Observações do Usuário
+              <FormControlLabelText style={{ color: palette.paragraph }} className="text-[14px] font-semibold">
+                Detalhes e Observações para a IA
               </FormControlLabelText>
             </FormControlLabel>
             <Textarea
               style={{ backgroundColor: palette.surface, borderColor: palette.border }}
-              className="rounded-xl border p-3 h-28">
+              className="rounded-2xl border p-3.5 h-28">
               <TextareaInput
                 style={{ color: palette.headline }}
-                placeholder="Detalhes, defeitos, medidas ou observações sobre o item..."
-                placeholderTextColor={palette.paragraph}
+                placeholder="Ex.: Tamanho G, pequeno desgaste no bolso esquerdo, botões originais..."
+                placeholderTextColor={palette.paragraphMuted}
                 value={notes}
                 onChangeText={setNotes}
                 textAlignVertical="top"
@@ -309,19 +336,28 @@ export default function CapturaScreen() {
             </Textarea>
           </FormControl>
 
-          {error && (
-            <Text style={{ color: palette.tertiary }} className="text-sm font-medium text-center">
-              {error}
-            </Text>
+          {/* Mensagem de Erro do Servidor */}
+          {serverError && (
+            <VStack
+              style={{ backgroundColor: palette.surface, borderColor: palette.danger }}
+              className="p-3.5 rounded-2xl border gap-1">
+              <Text style={{ color: palette.danger }} className="text-sm font-bold">
+                Falha ao cadastrar
+              </Text>
+              <Text style={{ color: palette.paragraph }} className="text-xs">
+                {serverError}
+              </Text>
+            </VStack>
           )}
 
+          {/* Botão de Envio */}
           <Button
             onPress={onSubmit}
             disabled={isLoading || isProcessing}
             style={{ backgroundColor: palette.highlight }}
-            className="rounded-xl h-14 items-center justify-center mt-2">
+            className="rounded-2xl h-14 items-center justify-center mt-1 active:opacity-85">
             <ButtonText style={{ color: palette.onHighlight }} className="text-base font-bold">
-              {isLoading ? 'Cadastrando produto...' : 'Cadastrar Anúncio'}
+              {isLoading ? 'Salvando produto e fotos…' : 'Salvar no Catálogo'}
             </ButtonText>
           </Button>
         </VStack>
