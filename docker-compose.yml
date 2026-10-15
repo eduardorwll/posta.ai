@@ -1,0 +1,46 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: posta-ai-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: posta_ai
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./infra/volumes/pgdata:/var/lib/postgresql/data
+      - ./infra/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d posta_ai"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - posta-ai-network
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: posta-ai-backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql://postgres:postgrespassword@db:5432/posta_ai
+      STORAGE_PATH: /app/storage
+    volumes:
+      - ./infra/volumes/storage:/app/storage
+      - ./backend/src:/app/src
+      - ./backend/tests:/app/tests:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - posta-ai-network
+
+networks:
+  posta-ai-network:
+    driver: bridge

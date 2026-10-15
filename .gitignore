@@ -50,3 +50,10 @@ example
 
 # Docker volume data
 infra/volumes/
+
+# Python & pytest
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+

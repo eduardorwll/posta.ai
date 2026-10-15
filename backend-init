@@ -1,0 +1,84 @@
+#!/usr/bin/env bash
+set -e
+
+# ─── posta.ai: Backend Production/Dev Orchestration Script ────────────
+# Este script gerencia estritamente o backend:
+# 1. PostgreSQL 16 Alpine
+# 2. FastAPI (Python 3.13)
+# 3. Volumes persistentes de dados e fotos (/storage)
+#
+# Não possui dependências de ferramentas de IA (OpenCode, OmniRoute, etc).
+
+DOCKER_CMD="docker"
+if ! command -v docker >/dev/null 2>&1; then
+  echo "Erro: 'docker' não encontrado no PATH."
+  exit 1
+fi
+
+SCRIPT_NAME="$(basename "$0")"
+
+# ─── 1. Parar backend ────────────────────────────────────────────────
+if [ "$1" = "--stop" ] || [ "$1" = "stop" ] || [ "$SCRIPT_NAME" = "backend-stop" ] || [ "$SCRIPT_NAME" = "backend-stop.sh" ]; then
+  echo "Encerrando Backend posta.ai (PostgreSQL + FastAPI)..."
+  $DOCKER_CMD compose down
+  echo "Backend encerrado com sucesso."
+  exit 0
+fi
+
+# ─── 2. Status dos containers ─────────────────────────────────────────
+if [ "$1" = "--status" ] || [ "$1" = "status" ]; then
+  echo "=== Containers do Backend (docker compose ps) ==="
+  $DOCKER_CMD compose ps
+  echo ""
+  echo "=== Healthcheck da API (http://localhost:8000/health) ==="
+  if curl -s http://localhost:8000/health 2>/dev/null | grep -q "ok"; then
+    echo "🟢 API FastAPI está saudável e respondendo!"
+  else
+    echo "🔴 API FastAPI não está respondendo em http://localhost:8000/health."
+  fi
+  exit 0
+fi
+
+# ─── 3. Logs dos containers ──────────────────────────────────────────
+if [ "$1" = "--logs" ] || [ "$1" = "logs" ]; then
+  shift || true
+  exec $DOCKER_CMD compose logs -f "$@"
+fi
+
+# ─── 4. Inicializar backend ──────────────────────────────────────────
+echo "Iniciando Backend posta.ai (PostgreSQL 16 + FastAPI)..."
+
+BUILD_FLAG=""
+if [ "$1" = "--build" ] || [ "$2" = "--build" ]; then
+  BUILD_FLAG="--build"
+fi
+
+if ! $DOCKER_CMD compose up -d $BUILD_FLAG; then
+  echo "Erro: Falha ao subir containers Docker."
+  echo "Dica: Caso precise de permissão para o socket Docker, execute:"
+  echo "  sudo usermod -aG docker \$USER && newgrp docker"
+  exit 1
+fi
+
+echo "Aguardando inicialização da API em http://localhost:8000/health..."
+retries=25
+healthy=false
+while [ $retries -gt 0 ]; do
+  if curl -s http://localhost:8000/health 2>/dev/null | grep -q "ok"; then
+    healthy=true
+    break
+  fi
+  sleep 1
+  retries=$((retries - 1))
+done
+
+if [ "$healthy" = true ]; then
+  echo "🟢 Backend ativo e saudável!"
+  echo "  - API Local: http://localhost:8000"
+  echo "  - Documentação Swagger: http://localhost:8000/docs"
+  echo "  - Storage de Fotos: http://localhost:8000/storage"
+  echo "  - Banco de Dados: localhost:5432 (porta interna: 5432)"
+else
+  echo "⚠️ Backend subiu em segundo plano mas ainda não respondeu ao healthcheck."
+  echo "Verifique os logs com: ./backend-init --logs"
+fi
