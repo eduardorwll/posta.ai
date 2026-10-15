@@ -16,6 +16,13 @@ fi
 EXPO_PID_FILE="/tmp/expo-posta-ai.pid"
 EXPO_LOG_FILE="/tmp/expo-posta-ai.log"
 
+is_expo_running() {
+  if curl -s http://localhost:8081/status 2>/dev/null | grep -q "packager-status:running"; then
+    return 0
+  fi
+  return 1
+}
+
 # Parar serviços se solicitado
 if [ "$1" = "--stop" ] || [ "$1" = "stop" ] || [ "$SCRIPT_NAME" = "dev-stop" ] || [ "$SCRIPT_NAME" = "dev-stop.sh" ]; then
   echo "Encerrando Expo Metro (porta 8081)..."
@@ -26,7 +33,7 @@ if [ "$1" = "--stop" ] || [ "$1" = "stop" ] || [ "$SCRIPT_NAME" = "dev-stop" ] |
     fi
     rm -f "$EXPO_PID_FILE"
   fi
-  fuser -k 8081/tcp >/dev/null 2>&1 || true
+  pkill -f "expo start" 2>/dev/null || true
 
   if [ "$1" = "--all" ] || [ "$2" = "--all" ] || [ "$SCRIPT_NAME" = "dev-stop" ]; then
     echo "Encerrando containers do backend..."
@@ -43,8 +50,8 @@ if [ "$1" = "--status" ] || [ "$1" = "status" ]; then
   ./backend-init --status || true
   echo ""
   echo "=== Expo Metro ==="
-  if fuser 8081/tcp >/dev/null 2>&1; then
-    echo "🟢 Expo Metro em execução na porta 8081."
+  if is_expo_running; then
+    echo "🟢 Expo Metro em execução na porta 8081 (packager-status:running)."
     [ -f "$EXPO_PID_FILE" ] && echo "PID: $(cat "$EXPO_PID_FILE")"
     [ -f "$EXPO_LOG_FILE" ] && echo "Logs: $EXPO_LOG_FILE"
   else
@@ -69,7 +76,7 @@ echo ""
 echo "Iniciando Expo Metro Bundler (IP Tailscale: $TAILSCALE_IP)..."
 
 if [ "$1" = "--background" ] || [ "$1" = "-d" ]; then
-  if fuser 8081/tcp >/dev/null 2>&1; then
+  if is_expo_running; then
     echo "🟢 Expo Metro já está em execução na porta 8081."
   else
     REACT_NATIVE_PACKAGER_HOSTNAME="$TAILSCALE_IP" nohup bun expo start -c > "$EXPO_LOG_FILE" 2>&1 &
