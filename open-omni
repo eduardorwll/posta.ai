@@ -92,7 +92,7 @@ if is_expo_running; then
   echo "Expo já está em execução na porta 8081."
 else
   echo "Iniciando Expo (HOST: 100.110.221.21) em segundo plano..."
-  nohup env REACT_NATIVE_PACKAGER_HOSTNAME=100.110.221.21 bunx expo start -c > "$EXPO_LOG_FILE" 2>&1 &
+  nohup env REACT_NATIVE_PACKAGER_HOSTNAME=100.110.221.21 bun expo start -c > "$EXPO_LOG_FILE" 2>&1 &
   echo $! > "$EXPO_PID_FILE"
   echo "Expo iniciado (PID: $(cat "$EXPO_PID_FILE"), logs em $EXPO_LOG_FILE)."
 fi

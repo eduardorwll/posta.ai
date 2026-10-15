@@ -15,7 +15,8 @@ Instale as dependências do projeto e inicie o servidor de desenvolvimento via E
 
 ```bash
 bun install
-bunx expo start
+bun start          # ou: bun expo start
+bun run start:clean # ou: bun start -c (inicia limpando o cache)
 ```
 
 Para verificar tipos TypeScript e regras de linter:

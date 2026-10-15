@@ -79,7 +79,7 @@ posta-ai-app/
 ├── estado_atual.md           # Snapshot resumido e compilado
 ├── AGENTS.md                 # Regras de manutenção do projeto, aprovação prévia e otimização de tokens (omni-compression)
 ├── CLAUDE.md                 # Referência para Claude Code às diretrizes de AGENTS.md
-├── open-omni (open-omni.sh)   # Script bash para inicialização do ambiente (OmniRoute daemon + Expo com REACT_NATIVE_PACKAGER_HOSTNAME + OpenCode com --auto)
+├── open-omni (open-omni.sh)   # Script bash para inicialização do ambiente (OmniRoute daemon + Expo via 'bun expo start -c' com REACT_NATIVE_PACKAGER_HOSTNAME + OpenCode com --auto)
 ├── stop-omni (stop-omni.sh)   # Script bash para encerramento dos serviços locais (OmniRoute daemon e Expo)
 ├── opencode.json             # Configuração e contexto do OpenCode (permissões automáticas sob governança prévia)
 ├── .agents/skills/           # Skills locais para os agentes (Expo, EAS, Gluestack e omni-compression)
