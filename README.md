@@ -6,7 +6,7 @@ Hub de vendas multiplataforma C2C para catalogação e publicação de produtos 
 
 Consulte o documento mestre [`ROADMAP.md`](file:///home/eduardorwll/Projects/posta-ai-app/ROADMAP.md) para detalhes completos sobre o planejamento das 5 etapas de arquitetura:
 1. **Etapa 1:** Blindagem de Isolamento Local & Verificação RLS (Concluída)
-2. **Etapa 2:** Pipeline de IA Multimodal de Custo Mínimo — Google Gemini 1.5 Flash-8B (Concluída)
+2. **Etapa 2:** Pipeline de IA Multimodal de Custo Zero — Google Gemini 3.5 Flash-Lite (Concluída)
 3. **Etapa 3:** Motor de Precificação e Inteligência de Mercado
 4. **Etapa 4:** Human-in-the-Loop & Revisão de Anúncios
 5. **Etapa 5:** Publicação Multicanal via RPA (Playwright Stealth)

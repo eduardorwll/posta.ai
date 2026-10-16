@@ -161,6 +161,6 @@ postaaiapp/
 
 ## 4. Próximos Passos
 
-- **Validação de Teste em Dispositivo Móvel:** Testar a navegação por swipe e acionar o botão de enriquecimento com IA no produto cadastrado.
-- **Etapa 3 — Motor de Precificação e Inteligência de Mercado:** Implementação de algoritmo de benchmark de preços e cálculo de preço sugerido para vendedores C2C.
+- **Etapa 3 — Motor de Precificação e Inteligência de Mercado:** Implementação de algoritmo de benchmark de preços de mercado C2C (Enjoei, Mercado Livre, OLX), ponderação estatística com base na condição do item (`novo`, `como_novo`, `seminovo`, `usado`) e preenchimento de `preco_medio_mercado` e `preco_sugerido`.
+- **Interface Comparativa no Mobile:** Conectar indicador visual da margem entre o valor desejado pelo vendedor (`preco_usuario`) e o preço médio do mercado no card do catálogo e na tela de edição [`src/app/produto/[id].tsx`](file:///home/eduardorwll/Projects/posta-ai-app/src/app/produto/[id].tsx).
 

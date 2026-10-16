@@ -50,6 +50,6 @@
 
 ## 3. Próximos Passos (Conforme ROADMAP.md)
 
-- **Testar IA em Dispositivo Móvel:** Validar o botão "Gerar Anúncio com IA" na tela de detalhes do produto.
-- **Iniciar Etapa 3 — Motor de Precificação e Inteligência de Mercado:** Implementação de benchmark de preços e cálculo de preço sugerido para vendedores C2C.
+- **Iniciar Etapa 3 — Motor de Precificação e Inteligência de Mercado:** Implementação de algoritmo de benchmark de preços de mercado C2C (Enjoei, Mercado Livre, OLX) e cálculo de preço ponderado por condição (`novo`, `como_novo`, `seminovo`, `usado`).
+- **Apresentar Indicador Visual de Mercado:** Conectar o cálculo de preço sugerido ao card do produto e ao formulário de edição rápida em [`src/app/produto/[id].tsx`](file:///home/eduardorwll/Projects/posta-ai-app/src/app/produto/[id].tsx).
 

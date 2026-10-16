@@ -18,18 +18,18 @@ flowchart LR
 
 ## 🔒 Etapa 1: Blindagem de Isolamento Local & Verificação RLS
 
-> **Status:** Em Execução | **Prioridade:** Máxima (Segurança e Integridade)
+> **Status:** Concluída | **Prioridade:** Máxima (Segurança e Integridade)
 
 ### Objetivos
 - Garantir que nenhum vendedor consiga acessar, visualizar ou manipular dados e mídias de outro vendedor.
 - Eliminar qualquer persistência residual de dados em memória volátil (heap do Hermes) ou armazenamento local (`AsyncStorage`) ao encerrar a sessão, inclusive offline.
 - Criar suíte formal de testes SQL adversarial simulando múltiplos usuários no Supabase.
 
-### Entregáveis Técnicos
+### Entregáveis Técnicos Concluídos
 1. **Script de Verificação RLS (`supabase/verify_isolation.sql`):**
    - Transação atômica (`BEGIN; ... ROLLBACK;`) executável no Supabase SQL Editor.
    - Simulação determinística de dois vendedores (`Usuario_A` e `Usuario_B`) via JWT context (`auth.uid()`).
-   - Teste de `SELECT`, `INSERT`, `UPDATE`, `DELETE` e rejeição de acessos forjados.
+   - Teste de `SELECT`, `INSERT`, `UPDATE`, `DELETE` e rejeição de acessos forjados aprovado.
 2. **Reforço de Integridade DDL:**
    - Adição de `NOTIFY pgrst, 'reload schema';` ao final de todas as migrações SQL para invalidar o schema cache obsoleto do PostgREST.
    - Reforço da restrição `NOT NULL DEFAULT auth.uid()` na coluna `user_id` de `produtos`.
@@ -39,31 +39,35 @@ flowchart LR
 
 ---
 
-## 🧠 Etapa 2: Fase 4A — Pipeline de IA Multimodal de Custo Mínimo (Google Gemini 1.5 Flash-8B)
+## 🧠 Etapa 2: Pipeline de IA Multimodal de Custo Zero (Google Gemini 3.5 Flash-Lite)
 
-> **Status:** Em Execução | **Dependência:** Etapa 1 (Concluída)
+> **Status:** Concluída | **Dependência:** Etapa 1 (Concluída)
 
 ### Objetivos
 - Converter fotos e observações sucintas digitadas pelo vendedor em títulos comerciais atraentes e descrições ricas em SEO para marketplaces (Enjoei, OLX, Mercado Livre, Facebook Marketplace).
-- **Custo Mínimo / Zero:** Operar primariamente sob o **Free Tier do Google AI Studio** (15 RPM / 1.500 produtos/dia sem custo — $0,00) utilizando **Google Gemini 1.5 Flash-8B** (custo pay-as-you-go de $0.0375/1M tokens de entrada e $0.15/1M de saída, equivalente a ~R$ 0,0008 por anúncio). Suporte plugável a **Gemini 2.0 Flash-Lite**.
+- **Custo Zero Absoluto & Blindagem contra Faturamento:** Operar primariamente sob o **Free Tier do Google AI Studio** utilizando **Google Gemini 3.5 Flash-Lite** ($0,00 até 1.500 requisições/dia).
+- **Rate Limiter Global no Banco de Dados:** Trava atômica no PostgreSQL com bloqueio pessimista limitando o sistema a no máximo 5 requisições por minuto somadas em todo o app.
 
-### Entregáveis Técnicos
+### Entregáveis Técnicos Concluídos
 1. **Orquestrador Serverless Seguro (Supabase Edge Function `enriquecer-produto`):**
    - Endpoint seguro autenticado via JWT do Supabase (`Authorization: Bearer <token>`), garantindo que apenas o vendedor proprietário do item dispare a IA.
-   - A `GEMINI_API_KEY` fica armazenada em *Secrets* da Supabase Function, nunca exposta no app mobile.
+   - A `GEMINI_API_KEY` do Google AI Studio fica armazenada em *Secrets* da Supabase Function, nunca exposta no app mobile.
    - Leitura das fotos no Storage CDN público (`{user_id}/{produto_id}/foto_*.jpg`).
    - Prompt de Visão Computacional ultra-econômico (imagens em dimensão padrão consumindo exatamente 258 tokens por foto).
    - Retorno estruturado forçado via `response_schema` e `response_mime_type: "application/json"`:
      - `nome`: Título comercial objetivo e de alto clique (máx 60 caracteres).
      - `descricao_curta`: Destaques em tópicos para redes sociais e previews de busca.
-     - `descricao_longa`: Copywriting completo de vendas com sugestão de medidas, estado e gatilhos de decisão.
+     - `descricao_longa`: Copywriting completo de vendas com especificações técnicas e apelo comercial.
      - `categoria`: Sugestão de categoria padronizada.
      - `tags`: Palavras-chave relevantes para busca em marketplaces.
-2. **Transição de Ciclo de Vida do Produto:**
-   - `status`: `'pendente'` ➔ `'processando_ia'` ➔ `'pronto'` (ou `'erro'` em caso de indisponibilidade).
-3. **Módulo Profundo & Feedback Visual no Mobile:**
-   - Método `enriquecerProdutoComIa(produtoId)` em `src/lib/api.ts` com isolamento completo de complexidade.
-   - Atualização do card do produto com indicador de progresso e exibição dos textos gerados pela IA.
+2. **Rate Limiter Global no PostgreSQL (`ia_rate_limiter` e `consumir_quota_ia`):**
+   - Tabela `ia_rate_limiter` e função atômica com `SELECT ... FOR UPDATE` limitando as chamadas globais a no máximo 5 por minuto em todo o sistema.
+3. **Módulo Profundo & Gestão de Produtos no Mobile:**
+   - Métodos `enriquecerProdutoComIa(produtoId)`, `atualizarProduto(id, dados)` e `removerProduto(id, fotos)` em `src/lib/api.ts`.
+   - Ação reativa `useProductStore.enriquecerProduto` que atualiza o estado para `processando_ia` e em seguida `pronto`.
+   - **Navegação Gestual por Swipe & Slide Nativo:** `SwipeableTabScreen.tsx` e transição contínua via Native Driver em `TabsLayout` (`src/app/(tabs)/_layout.tsx`).
+   - **Tela Nativa de Detalhes e Edição Manual (`src/app/produto/[id].tsx`):** Carrossel de fotos paginado, edição livre de todos os campos e botão "Gerar Anúncio com IA" sob demanda sem precisar fotografar novamente.
+
 
 ---
 
@@ -94,11 +98,12 @@ flowchart LR
 - Garantir que nenhum anúncio seja publicado sem a validação ou ajuste explícito do vendedor.
 
 ### Entregáveis Técnicos
-1. **Tela de Detalhes e Edição Rápida no Mobile:**
-   - Visualização do anúncio completo com carrossel de fotos originais em alta definição.
-   - Edição rápida em linha do título, descrição curta e descrição longa geradas pela IA.
-   - Adoção imediata do `preco_sugerido` com um toque ou manutenção do `preco_usuario`.
-   - Botão de confirmação "Aprovar para Publicação" (transição para `status = 'pronto'`).
+1. **Tela de Detalhes e Edição no Mobile (`src/app/produto/[id].tsx`):**
+   - Visualização do anúncio completo com carrossel paginado de fotos originais. *(Entregue antecipadamente)*
+   - Edição manual em tempo real do título comercial, descrição curta, descrição longa, observações, preço, condição e categoria. *(Entregue antecipadamente)*
+   - Botão "✨ Gerar Anúncio com IA" / "🔄 Regenerar com IA" sob demanda. *(Entregue antecipadamente)*
+   - Adoção imediata do `preco_sugerido` com um toque (a ser integrado após a Etapa 3).
+   - Exclusão atômica de produtos com purga no Supabase Storage. *(Entregue antecipadamente)*
 2. **Canal Opcional via Telegram:**
    - Bot de notificações com card interativo e botões Inline (`[✅ Aprovar]`, `[✏️ Editar no App]`).
 
