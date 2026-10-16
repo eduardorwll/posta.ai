@@ -69,11 +69,22 @@ export function traduzirErroAuth(err: any): string {
     return 'A senha deve conter no mínimo 6 caracteres.';
   }
 
+  // Diagnósticos enriquecidos gerados pelo middleware customFetch ou gateway de rede
+  if (
+    rawMsg.includes('HTTP ') ||
+    rawMsg.includes('Cloudflare') ||
+    rawMsg.includes('Portal Cativo') ||
+    rawMsg.includes('Acesso bloqueado') ||
+    rawMsg.includes('Rede Wi-Fi interceptou') ||
+    rawMsg.includes('dados móveis')
+  ) {
+    return rawMsg;
+  }
+
   if (
     msg.includes('unexpected character') ||
     msg.includes('json parse error') ||
-    msg.includes('syntaxerror') ||
-    msg.includes('gateway_error')
+    msg.includes('syntaxerror')
   ) {
     return 'Instabilidade temporária no servidor ou na conexão de rede. Verifique sua internet e tente novamente.';
   }

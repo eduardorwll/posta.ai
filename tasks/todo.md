@@ -283,6 +283,23 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
   - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md` e `tasks/todo.md`.
   - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
 
+## Blindagem de Rede e Diagnóstico de Gateway de Autenticação
+
+- [x] **Task 54: Injeção de Headers Canônicos e Extrator de `<title>` no `customFetch` (`src/lib/supabase.ts`)**
+  - [x] Injetar cabeçalhos de API canônicos (`Accept: application/json, text/plain, */*` e `User-Agent: Mozilla/5.0... posta-ai/1.0`) para prevenir bloqueios e desafios anti-bot (Cloudflare Bot Fight Mode).
+  - [x] Implementar extrator do `<title>` da página HTML interceptada (com limite de segurança de 1.500 caracteres) e `console.warn` estruturado.
+  - [x] Mapear cenários específicos de bloqueio (Cloudflare 403, Portal Cativo Wi-Fi, Rate Limit 429 e indisponibilidade 5xx) com instruções acionáveis em português (alternância para 4G/5G).
+  - *Critério de Verificação:* Teste de regex e execução em runtime sem exceções. (Concluído)
+
+- [x] **Task 55: Preservação de Diagnósticos de Rede e Gateway em `traduzirErroAuth` (`src/store/useAuthStore.ts`)**
+  - [x] Garantir que mensagens contendo diagnósticos ricos de gateway (`HTTP `, `Cloudflare`, `Portal Cativo`, `Acesso bloqueado`, `dados móveis`) sejam preservadas integralmente na tela de cadastro e login.
+  - [x] Remover identificadores de gateway do fallback genérico de sintaxe para evitar mascaramento do diagnóstico.
+  - *Critério de Verificação:* `bun run typecheck` e `bun run lint` com 0 erros. (Concluído)
+
+- [x] **Task 56: Sincronização Documental e Validação de Qualidade Final**
+  - [x] Atualizar `estado_atual.md`, `tasks/todo.md` e documentar mitigação no fluxo de autenticação.
+  - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
+
 ---
 
 ## Checkpoints de Validação
@@ -303,6 +320,7 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
 - [x] **Checkpoint 14 (Após Tasks 41 a 43):** Hardening de segurança implementado contra avisos do Supabase Advisor (DoS em quota de IA neutralizado, listagem pública no storage fechada, search_path fixado).
 - [ ] **Checkpoint 15 (Após Tasks 44 a 49):** Motor de precificação C2C ativo via Gemini 3.5 Flash-Lite com cálculo determinístico de depreciação, régua de mercado e adoção rápida no mobile.
 - [x] **Checkpoint 16 (Após Tasks 50 a 53):** Blindagem do cliente Supabase com middleware customFetch contra respostas HTML e tradução humanizada de erros de autenticação (eliminação de JSON Parse error).
+- [x] **Checkpoint 17 (Após Tasks 54 a 56):** Blindagem do middleware customFetch com injeção de headers canônicos de API, extrator diagnóstico de título HTML e preservação na store de autenticação.
 
 
 

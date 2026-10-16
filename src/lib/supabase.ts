@@ -23,7 +23,21 @@ export const isSupabaseConfigured = Boolean(
  */
 const customFetch: typeof fetch = async (input, init) => {
   try {
-    const response = await fetch(input, init);
+    // Injeta cabeçalhos canônicos de API (Accept e User-Agent) para prevenir bloqueios anti-bot
+    const headers = new Headers(init?.headers);
+    if (!headers.has('Accept')) {
+      headers.set('Accept', 'application/json, text/plain, */*');
+    }
+    if (!headers.has('User-Agent')) {
+      headers.set('User-Agent', 'Mozilla/5.0 (Linux; Android 14; Mobile) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36 posta-ai/1.0');
+    }
+
+    const modifiedInit = {
+      ...init,
+      headers,
+    };
+
+    const response = await fetch(input, modifiedInit);
 
     // Se a requisição foi bem-sucedida (status 2xx ou 3xx), passa diretamente sem overhead
     if (response.ok) {
@@ -38,11 +52,26 @@ const customFetch: typeof fetch = async (input, init) => {
 
       // Se começar com tag HTML ou doctype (ex: <!DOCTYPE html>, <html>, etc.)
       if (rawText.trim().startsWith('<')) {
+        // Extrai o título da página HTML com limite de segurança
+        const snippet = rawText.slice(0, 1500);
+        const titleMatch = snippet.match(/<title[^>]*>(.*?)<\/title>/i);
+        const pageTitle = titleMatch ? titleMatch[1].replace(/[\r\n\t]+/g, ' ').trim() : '';
+
+        console.warn(`[Supabase customFetch Intercepted] Status: ${response.status} | Title: "${pageTitle}" | URL:`, typeof input === 'string' ? input : (input as any)?.url);
+
         let msgAmigavel = 'Instabilidade temporária na conexão com o servidor. Tente novamente em instantes.';
-        if (response.status === 429) {
-          msgAmigavel = 'Limite temporário de requisições atingido. Aguarde alguns instantes e tente novamente.';
+        const lowerRaw = snippet.toLowerCase();
+
+        if (response.status === 403 || lowerRaw.includes('cloudflare') || lowerRaw.includes('access denied') || lowerRaw.includes('just a moment')) {
+          msgAmigavel = `Acesso bloqueado por segurança (HTTP ${response.status}${pageTitle ? `: ${pageTitle}` : ''}). Se estiver com VPN ativa ou no Wi-Fi da universidade, tente alternar para dados móveis (4G/5G).`;
+        } else if (lowerRaw.includes('captive') || lowerRaw.includes('portal') || lowerRaw.includes('hotspot') || lowerRaw.includes('autentica')) {
+          msgAmigavel = `Rede Wi-Fi interceptou a conexão (${pageTitle || 'Portal Cativo'}). Verifique sua conexão ou use dados móveis.`;
+        } else if (response.status === 429 || lowerRaw.includes('rate limit')) {
+          msgAmigavel = 'Limite temporário de requisições atingido no Supabase (HTTP 429). Aguarde alguns instantes e tente novamente.';
         } else if (response.status >= 500 && response.status <= 504) {
-          msgAmigavel = 'Servidor temporariamente indisponível. Aguarde alguns instantes e tente novamente.';
+          msgAmigavel = `Servidor indisponível temporariamente (HTTP ${response.status}${pageTitle ? `: ${pageTitle}` : ''}). Tente em instantes.`;
+        } else if (pageTitle) {
+          msgAmigavel = `Erro de rede (HTTP ${response.status}: ${pageTitle}). Verifique sua conexão.`;
         }
 
         return new Response(
