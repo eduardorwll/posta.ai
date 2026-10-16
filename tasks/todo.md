@@ -189,6 +189,16 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
   - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md`, `README.md` e `tasks/todo.md`.
   - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
 
+## Blindagem do Root Layout & Container de Gestos
+
+- [x] **Task 36: Integração do Container Nativo de Gestos no Root Layout (`src/app/_layout.tsx`)**
+  - [x] Importar e envolver árvore com `GestureHandlerRootView` (`flex: 1`) eliminando o `Render Error`.
+  - *Critério de Verificação:* `bun run typecheck` e `bun run lint`. (Concluído)
+
+- [x] **Task 37: Sincronização Documental & Validação de Qualidade Final**
+  - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md`, `README.md` e `tasks/todo.md`.
+  - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
+
 ---
 
 ## Checkpoints de Validação
@@ -204,4 +214,6 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
 - [x] **Checkpoint 9 (Após Tasks 23 a 26):** Gitignore blindado contra artefatos Supabase, RLS otimizado com (select auth.uid()) e Deep Linking mobile configurado.
 - [x] **Checkpoint 10 (Após Tasks 27 a 31):** Edge Function de IA Gemini 1.5 Flash-8B criada, módulo profundo no mobile acoplado e feedback visual integrado.
 - [x] **Checkpoint 11 (Após Tasks 32 a 35):** Navegação por swipe entre abas ativa, edição manual de produtos, enriquecimento de IA sob demanda e exclusão atômica operacionais.
+- [x] **Checkpoint 12 (Após Tasks 36 e 37):** Container GestureHandlerRootView configurado na raiz com flex: 1, eliminando o erro de GestureDetector em tempo de execução.
+
 

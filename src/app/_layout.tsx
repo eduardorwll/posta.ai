@@ -3,6 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
 import { useLinkingURL } from 'expo-linking';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import { useAppTheme } from '@/constants/theme';
@@ -69,11 +70,13 @@ export default function RootLayout() {
   };
 
   return (
-    <GluestackUIProvider mode={isDark ? 'dark' : 'light'}>
-      <ThemeProvider value={navigationTheme}>
-        <StatusBar style={isDark ? 'light' : 'dark'} />
-        <Stack screenOptions={{ headerShown: false }} />
-      </ThemeProvider>
-    </GluestackUIProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <GluestackUIProvider mode={isDark ? 'dark' : 'light'}>
+        <ThemeProvider value={navigationTheme}>
+          <StatusBar style={isDark ? 'light' : 'dark'} />
+          <Stack screenOptions={{ headerShown: false }} />
+        </ThemeProvider>
+      </GluestackUIProvider>
+    </GestureHandlerRootView>
   );
 }

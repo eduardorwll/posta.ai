@@ -97,7 +97,7 @@ postaaiapp/
 ├── components/ui/            # Gluestack UI v5 enxuto (button, input, textarea, form-control, hstack, vstack, text)
 └── src/
     ├── app/
-    │   ├── _layout.tsx       # RootLayout: Gluestack + ThemeProvider + useAuthStore guarda de rotas + Splash control
+    │   ├── _layout.tsx       # RootLayout: GestureHandlerRootView + Gluestack + ThemeProvider + useAuthStore guarda de rotas + Splash control
     │   ├── index.tsx         # Redirecionamento condicional baseado na sessão ativa
     │   ├── (auth)/           # Grupo de rotas públicas de autenticação
     │   │   ├── _layout.tsx   # Stack layout temático para autenticação
