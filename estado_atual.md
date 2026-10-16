@@ -1,75 +1,51 @@
 # Estado Atual do Projeto — posta.ai
 
-> Snapshot compilado em 2026-10-15. Implementadas com sucesso a **UI Nativa de Alta Fidelidade (Etapa 1)** e a **Arquitetura de Backend com Padrões `api-scaffolding` e Testes Automatizados (Etapa 2)**:
-> - **Skills & Frameworks Ativos:** `ui-ux-pro-max`, `api-scaffolding`, `fastapi-templates`, e regras canônicas de `ciembor/agent-rules-books` (*Clean Architecture*, *APOSD*, *Release It!*, *Code Complete*).
-> - **UI Nativa de Alta Fidelidade (`src/lib/haptics.ts`, `PhotoGrid.tsx`, `ProductCard.tsx`, `produtos.tsx`, `captura.tsx`):** Tokens semânticos, haptics físicos (`expo-haptics`), badge de capa, busca instantânea em memória e tema dinâmico.
-> - **Backend FastAPI & PostgreSQL Operacionais (Docker):** Containers `posta-ai-backend` e `posta-ai-db` ativos e saudáveis.
-> - **Pydantic V2 & Contratos Canônicos (`schemas/product.py`):** Enums sincronizados com o banco e mobile, campos opcionais de IA e mapeamento inteligente `_missing_`.
-> - **Repository Pattern (`ProductRepository`):** Acesso a dados desacoplado das rotas HTTP, com transações atômicas seguras (`commit` em mutações) e rollback de arquivos em falhas.
-> - **URLs Dinâmicas para Fotos:** Resolução via `request.base_url` para compatibilidade total com testes em rede local/Tailscale.
-> - **Suíte de Testes Automatizados (100% Verde):** 6 testes cobrindo healthcheck, validações de foto, criação, listagem e compatibilidade legada rodando via `pytest-asyncio`.
+> Snapshot compilado em 2026-10-15. Concluída com sucesso a **Etapa 1: Blindagem de Isolamento Local & Verificação RLS**, além de **Autenticação Multi-Usuário** e **Governança de Migrações CI/CD (Supabase CLI)**:
+> - **Skills & Frameworks Ativos:** `addyosmani/agent-skills` (`using-agent-skills`, `code-simplification`, `deprecation-and-migration`, `planning-and-task-breakdown`, `source-driven-development`), `ui-ux-pro-max`, e regras canônicas de `ciembor/agent-rules-books` (*Clean Architecture*, *APOSD*, *Release It!*, *Code Complete*).
+> - **Roadmap Oficial das 5 Fases:** Documentado em [`ROADMAP.md`](file:///home/eduardorwll/Projects/posta-ai-app/ROADMAP.md) como guia definitivo de engenharia do projeto.
+> - **Purga Atômica no Logout:** Limpeza incondicional de dados de produtos (`useProductStore.resetProdutos()`) e de rascunhos em cache (`useDraftStore.clearDraft()`) no bloco `finally` de `useAuthStore.signOut()`, imune a falhas de rede.
+> - **Verificação Canônica de RLS:** Script transacional [`supabase/verify_isolation.sql`](file:///home/eduardorwll/Projects/posta-ai-app/supabase/verify_isolation.sql) executando bateria de 7 testes adversariais entre múltiplos usuários com `ROLLBACK` seguro.
+> - **Notificação de Reload do PostgREST:** Inclusão de `NOTIFY pgrst, 'reload schema';` nas migrações SQL para eliminar discrepâncias no schema cache.
+> - **Autenticação Nativa Multi-Usuário:** Store Zustand `useAuthStore` reativa com listener `onAuthStateChange`, hidratação via AsyncStorage, telas nativas de `(auth)/login` e `(auth)/cadastro` com suporte a confirmação de e-mail e logout seguro.
+> - **Isolamento de Dados & Storage (RLS):** Coluna `user_id UUID REFERENCES auth.users(id)` e índice composto `idx_produtos_user_created` na tabela `produtos`. Uploads no bucket `produtos` sob a pasta `{user_id}/{produto_id}/foto_{index}.jpg`.
+> - **Diagnóstico e Saúde Perfeitos:** `bunx expo-doctor` com 21/21 verificações aprovadas, `bun run typecheck` com 0 erros e `bun run lint` 100% limpo.
 
 ---
 
 ## 1. Status Geral de Funcionamento
-- **Execução em Dispositivo:** **Aprovada** (Fase 2 & 3). App roda de forma fluida no dispositivo móvel, sem travamento na Splash Screen.
+
+- **Execução em Dispositivo:** **Aprovada**. App roda de forma fluida no dispositivo móvel, sem travamento na Splash Screen.
+- **Autenticação Multi-Usuário:** Fluxo completo e reativo com persistência no AsyncStorage (`useAuthStore`).
+- **Isolamento Local Blindado:** Nenhuma informação de inventário ou rascunho de fotos sobrevive ao logout, prevenindo vazamentos em aparelhos compartilhados.
 - **UI Nativa de Alta Fidelidade & Haptics:** Suporte completo a feedback físico (`expo-haptics`), tokens semânticos e busca instantânea.
 - **Tema Claro e Escuro Dinâmico:** Suporte completo a temas (`Escuro`, `Claro`, `Automático`), com persistência segura (`expo-secure-store`) e transição em tempo real na UI.
-- **Identidade Visual no Topo (`AppHeader.tsx`):** Isotipo ampliado para 48×48 px para maior destaque e presença visual da marca.
+- **Identidade Visual no Topo (`AppHeader.tsx`):** Isotipo em 48×48 px com destaque visual da marca.
 - **Gerenciador de Pacotes:** **Bun** (`bun.lock`).
 - **Validação de Código:**
-  - `bunx tsc --noEmit`: 0 erros.
-  - `bunx expo lint`: 0 erros (18 warnings de boilerplate do Gluestack UI v5).
-  - Suíte de Testes Backend: 6 passed (100% de sucesso).
-- **Backend (Fase 3 - Concluída e Replanejada):**
-  - API FastAPI assíncrona com PostgreSQL 16 Alpine via `docker-compose.yml`.
-  - Endpoints `POST /produtos` (multipart/form-data com fotos), `GET /produtos`, `GET /produtos/{id}`, `GET /health` (com verificação de banco).
-  - Persistência de fotos em disco local (`/app/storage/produtos/{id}/`), servidas via StaticFiles em `/storage`.
-  - Pool de conexões assíncrono com `psycopg[binary,pool]>=3.2.3` (`AsyncConnectionPool`).
-  - Resolução dinâmica de URLs para fotos sem hardcoded `localhost`.
-  - Repositório `ProductRepository` isolando SQL de rotas HTTP.
-- **Mobile (Fase 3):**
-  - `src/lib/api.ts`: cliente HTTP com base URL dinâmica gerenciada pela store `useApiConfigStore`, normalização de URIs (`file://` / `content://`), detecção abrangente de MIME types (jpg, png, webp, heic) e correção de prototype chain em `ApiException` para suporte nativo em Hermes.
-  - `src/store/useApiConfigStore.ts`: store Zustand com persistência assíncrona via `expo-secure-store`, tendo `http://100.110.221.21:8000` (Tailscale) como padrão oficial do sistema e auto-migração de valores legados (`localhost:8000`).
-  - `src/store/useThemeStore.ts`: store Zustand de tema com persistência assíncrona (`posta_ai_theme_mode`).
-  - `src/app/(tabs)/configuracao.tsx`: menu completo de preferências com seções de Aparência conectada, IA/Anúncios, Canais de Venda e dropdown colapsável de Configurações Avançadas (Padrão / Personalizado), teste de conexão com latência e status HTTP.
-  - `useProductStore.ts`: ações assíncronas `fetchProdutos()` e `cadastrarProduto()`, estados `isLoading` e `error`.
-  - `captura.tsx`: envio real para a API com feedback de loading, banner de erro com layout sem sobreposição (`Alert02Icon` + título e descrição estruturados) e mensagens descritivas de diagnóstico de rede.
-  - `produtos.tsx`: catálogo com busca em tempo real, Pull-to-Refresh, empty states com tipografia blindada contra sobreposição (`RNText`, `includeFontPadding: false`, `lineHeight` explícito).
-  - `ProductCard.tsx`: layout seguro com badge semântico delimitado (`flexShrink: 0`, altura e paddings fixos) e tipografia com line-height controlado sem truncamento ou colisão.
-- **Scripts e Ferramentas Locais (Unificados):**
-  - `dev-start` (`bun start` ou `bun dev`): orquestra inicialização do Backend Docker e do Expo Metro com IP Tailscale (`100.110.221.21`), proteção contra execução acidental como root/sudo e limpeza preventiva da porta 8081.
-  - `dev-stop` (`bun stop` ou `bun run dev:stop`): encerra com segurança e de forma atômica o Expo Metro (porta 8081) e os containers Docker (`posta-ai-backend` e `posta-ai-db`).
-  - `metro.config.js`: configurado com `blockList` para ignorar `infra/` e `backend/`, prevenindo erros de permissão (`EACCES`) ao tentar monitorar volumes restritos do PostgreSQL (`pgdata`).
-  - `bun run test:backend`: executa a suíte de testes assíncronos do backend (`pytest-asyncio`).
+  - `bun run typecheck` (`tsc --noEmit`): 0 erros.
+  - `bunx expo-doctor`: 21/21 verificações aprovadas (100% em conformidade com o SDK 57).
+  - `bun run lint`: 0 erros.
+- **Backend & Nuvem (Supabase Cloud Serverless & CI/CD):**
+  - Diretório canônico `supabase/migrations/` com migrações SQL versionadas, reload automático de schema do PostgREST e `supabase/config.toml` para automação via Supabase CLI.
+  - Script SQL consolidado em `supabase/schema.sql` pronto para execução direta no painel Supabase.
+  - Script de teste adversarial em `supabase/verify_isolation.sql`.
+  - Cliente oficial `@supabase/supabase-js` em `src/lib/supabase.ts` com persistência de sessão assíncrona no `@react-native-async-storage/async-storage`.
+  - Variáveis de ambiente padronizadas: `EXPO_PUBLIC_SUPABASE_URL` e `EXPO_PUBLIC_SUPABASE_ANON_KEY`.
 
 ---
 
 ## 2. Formulário e Interface Concluídos
 
-O app mobile possui o fluxo de cadastro, listagem e menu de preferências completo, integrado ao backend e com suporte a tema claro/escuro:
-1. **Nome do Produto:** Campo de texto obrigatório (mínimo de 3 caracteres).
-2. **Condição do Produto:** Chips (`Novo`, `Como novo`, `Seminovo`, `Usado`).
-3. **Categoria / Nicho:** Chips (6 categorias canônicas).
-4. **Preço e Observações:** Campo com conversão em BRL e textarea.
-5. **Menu de Configurações (`configuracao.tsx`):** Ajuste de tema visual (`Escuro`, `Claro`, `Automático`), preferências de IA para anúncios, status de marketplaces parceiros e dropdown colapsável de Configurações Avançadas para ajuste do endpoint com padrão Tailscale (`100.110.221.21:8000`) ou endpoint personalizado.
-6. **Card de Produto (`ProductCard.tsx`):** Miniatura da foto principal, nome, linha `Condição • Categoria`, preço em destaque, badge de status semântico.
-7. **Envio Real:** `captura.tsx` envia dados + fotos via `multipart/form-data` para a API FastAPI.
-8. **Listagem Real:** `produtos.tsx` carrega produtos da API ao montar, com busca em tempo real, Pull-to-Refresh e estados de loading/erro/vazio.
+1. **Autenticação:** Login e Cadastro nativos com validações inline, toggle de visibilidade de senha e feedback claro sobre e-mail de ativação.
+2. **Perfil do Vendedor:** Exibição do e-mail autenticado e botão de encerramento de sessão seguro na tela de Configurações com purga atômica local.
+3. **Cadastro de Produto:** Nome obrigatório, chips de condição, chips de categoria, preço em BRL, observações e até 5 fotos otimizadas.
+4. **Isolamento de Dados:** Cada vendedor visualiza exclusivamente seus itens no catálogo e armazena fotos em sua pasta própria no bucket `produtos`.
+5. **Catálogo:** Busca instantânea em memória, Pull-to-Refresh, badges contextuais e formatação de moeda.
+6. **Configurações:** Perfil do vendedor, temas Claro/Escuro/Automático, canais de venda e probe de integridade/latência com a nuvem.
 
 ---
 
-## 3. Arquitetura de Backend Replanejada (`api-scaffolding`)
+## 3. Próximos Passos (Conforme ROADMAP.md)
 
-- **Docker Compose:** Serviço `db` (PostgreSQL 16 Alpine com healthcheck) + `backend` (FastAPI Python 3.13-slim com volume de testes).
-- **Banco de Dados:** Tabela `produtos` com UUID PK (`gen_random_uuid()`), ENUMs canônicos de status/condição/categoria, índice em `created_at DESC`.
-- **API FastAPI:** `POST /produtos` (multipart), `GET /produtos`, `GET /produtos/{id}`, `GET /health` (com verificação de integridade do pool).
-- **Repository Pattern:** `ProductRepository` cuidando de queries, commits e rollback.
-- **Suíte de Testes:** Executável diretamente com `docker exec posta-ai-backend pytest -v /app/tests`.
-
----
-
-## 4. Próximos Passos
-
-- **Validação de Fluxo E2E no Dispositivo:** Realizar cadastro de produto com foto real pelo celular via Tailscale e verificar aparição instantânea no catálogo.
-- **Fase 4 — Enriquecimento com IA:** Integração com LLMs multimodais para geração de título atraente, descrição curta, descrição longa para marketplace, estimativa de preço de mercado e sugestão de preço.
+- **Execução do Script SQL no Supabase:** Executar `supabase/schema.sql` (ou `supabase/migrations/20261015000001_multi_user_auth.sql`) no SQL Editor do painel Supabase para aplicar a coluna `user_id` e o `NOTIFY pgrst, 'reload schema'`.
+- **Iniciar Etapa 2 — Pipeline de IA Multimodal (Google Gemini Flash):** Criação da Edge Function / worker serverless para processamento de fotos e geração automática de título, descrição curta e descrição longa comercial.

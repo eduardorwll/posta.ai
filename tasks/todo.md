@@ -1,0 +1,132 @@
+# Checklist de Tarefas: Limpeza de Slop & Migração para Supabase Cloud
+
+Plano de tarefas executáveis governado pelas skills `code-simplification`, `deprecation-and-migration` e `planning-and-task-breakdown`.
+
+## Tarefas Mapeadas
+
+- [x] **Task 1: Expurgo de Slop, Código Morto e Dependências Fantasmas**
+  - [x] Remover 11 dependências não utilizadas no package.json.
+  - [x] Remover `components/ui/box/`, `components/ui/card/`, `components/ui/badge/`.
+  - [x] Remover `scripts/reset-project.js`, `scripts/`, `venv/` e `.pytest_cache/`.
+  - *Critério de Verificação:* `bun install` e `bunx tsc --noEmit` (0 erros). (Concluído)
+
+- [x] **Task 2: Instalação das Dependências do Supabase**
+  - [x] Instalar `@supabase/supabase-js` e `base64-arraybuffer`.
+  - *Critério de Verificação:* `bunx tsc --noEmit` (0 erros). (Concluído)
+
+- [x] **Task 3: Script Canônico de Setup do Supabase (`supabase/schema.sql`)**
+  - [x] Criar script com pgcrypto, ENUMs, tabela `produtos`, bucket `produtos` e RLS policies.
+  - *Critério de Verificação:* Conferência estrutural do SQL. (Concluído)
+
+- [x] **Task 4: Configuração de Ambiente e Cliente Supabase (`src/lib/supabase.ts`)**
+  - [x] Criar `.env.example`, `.env` e inicializador seguro com `AsyncStorage`.
+  - *Critério de Verificação:* `bunx tsc --noEmit` (0 erros). (Concluído)
+
+- [x] **Task 5: Refatoração do Deep Module de Produtos (`src/lib/api.ts`)**
+  - [x] Substituir chamadas locais por Supabase Storage e PostgREST.
+  - [x] Implementar upload com ArrayBuffer e rollback atômico em falha.
+  - *Critério de Verificação:* `bunx tsc --noEmit` e `bunx expo lint`. (Concluído)
+
+- [x] **Task 6: Adaptação da Tela de Configurações (`src/app/(tabs)/configuracao.tsx`)**
+  - [x] Atualizar teste de latência e conexão para apontar para o Supabase Cloud.
+  - *Critério de Verificação:* `bunx tsc --noEmit` e `bunx expo lint`. (Concluído)
+
+- [x] **Task 7: Eliminação da Infraestrutura Local Legada**
+  - [x] Parar e encerrar containers Docker locais (`posta-ai-backend`, `posta-ai-db`).
+  - [x] Remover `backend/`, `infra/`, `docker-compose.yml`, `pytest.ini`, `dev-start`, `dev-stop`, `backend-init`, `backend-stop`.
+  - [x] Limpar scripts de backend no `package.json` e simplificar `metro.config.js`.
+  - *Critério de Verificação:* `bunx expo-doctor` e `bunx tsc --noEmit`. (Concluído)
+
+- [x] **Task 8: Sincronização Documental & Registro Final**
+  - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md`, `README.md` e `tasks/todo.md`.
+  - *Critério de Verificação:* `bunx tsc --noEmit` e `bunx expo lint` com 0 erros. (Concluído)
+
+## Configuração Tailscale Metro
+
+- [x] **Task 9: Injeção Dinâmica de IP Tailscale nos Scripts do Expo (`package.json`)**
+  - [x] Atualizar scripts `start`, `dev`, `clean`, `android` e `ios` com `REACT_NATIVE_PACKAGER_HOSTNAME`.
+  - *Critério de Verificação:* Execução de teste do script `bun start --help` e verificação de hostname. (Concluído)
+
+- [x] **Task 10: Atualização de Variáveis e Documentação (`.env.example`, `README.md`, `estado_atual.md`)**
+  - [x] Documentar variável `REACT_NATIVE_PACKAGER_HOSTNAME` em `.env.example`.
+  - [x] Atualizar guia de execução em `README.md` e snapshots de estado.
+  - *Critério de Verificação:* `bunx tsc --noEmit` e `bunx expo-doctor`. (Concluído)
+
+## Autenticação Multi-Usuário e Migrações CI/CD (Supabase)
+
+- [x] **Task 11: Configuração da Supabase CLI e Migrações Versionadas**
+  - [x] Criar `supabase/config.toml` para padronização CI/CD.
+  - [x] Criar `supabase/migrations/20261015000000_init_schema.sql` (schema base).
+  - [x] Criar `supabase/migrations/20261015000001_multi_user_auth.sql` (adição de `user_id`, índice composto e RLS restrito na tabela e no storage).
+  - [x] Sincronizar `supabase/schema.sql` com o estado canônico completo.
+  - *Critério de Verificação:* Validação de sintaxe SQL e integridade das políticas RLS. (Concluído)
+
+- [x] **Task 12: Store Zustand de Autenticação (`src/store/useAuthStore.ts`)**
+  - [x] Implementar store de autenticação com persistência de sessão e `onAuthStateChange`.
+  - [x] Ações: `signIn`, `signUp`, `signOut`, `initAuth` e estados `user`, `session`, `isInitialized`, `isLoading`, `error`.
+  - *Critério de Verificação:* `bun run typecheck` com 0 erros. (Concluído)
+
+- [x] **Task 13: Telas Nativas de Login e Cadastro (`src/app/(auth)/...`)**
+  - [x] Criar layout de autenticação `src/app/(auth)/_layout.tsx`.
+  - [x] Criar tela de Login `src/app/(auth)/login.tsx` com paleta dinâmica, haptics e validações.
+  - [x] Criar tela de Cadastro `src/app/(auth)/cadastro.tsx` com aviso de confirmação de e-mail e haptics.
+  - *Critério de Verificação:* `bun run typecheck` e `bun run lint`. (Concluído)
+
+- [x] **Task 14: Proteção de Rotas e Prevenção de Flicker (`src/app/_layout.tsx`)**
+  - [x] Integrar `useAuthStore` ao layout raiz.
+  - [x] Adicionar guarda de navegação redirecionando não autenticados para `/(auth)/login` e autenticados para `/(tabs)/captura`.
+  - [x] Prevenir flicker na inicialização mantendo estado de carregamento até `isInitialized`.
+  - *Critério de Verificação:* `bun run typecheck` e `bun run lint`. (Concluído)
+
+- [x] **Task 15: Isolamento Multi-Usuário no Módulo Profundo (`src/lib/api.ts`)**
+  - [x] Checagem defensiva de sessão ativa com `supabase.auth.getUser()`.
+  - [x] Upload de fotos estruturado por pasta de usuário: `{user_id}/{produto_id}/foto_{i}.jpg`.
+  - [x] Gravação de `user_id` no registro da tabela `produtos`.
+  - *Critério de Verificação:* `bun run typecheck` e `bun run lint`. (Concluído)
+
+- [x] **Task 16: Seção de Perfil e Logout na Tela de Configurações (`src/app/(tabs)/configuracao.tsx`)**
+  - [x] Exibir e-mail e status do vendedor conectado.
+  - [x] Botão de Logout seguro com confirmação e feedback tátil (`expo-haptics`).
+  - *Critério de Verificação:* `bun run typecheck` e `bun run lint`. (Concluído)
+
+- [x] **Task 17: Sincronização Documental & Validação de Qualidade Final**
+  - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md`, `README.md` e `tasks/todo.md`.
+  - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
+
+## Etapa 1: Blindagem de Isolamento Local & Verificação RLS
+
+- [x] **Task 18: Registro Permanente do Roadmap das 5 Etapas (`ROADMAP.md`)**
+  - [x] Criar `ROADMAP.md` detalhando objetivos, arquitetura, fluxos e entregáveis das Etapas 1 a 5.
+  - *Critério de Verificação:* Conferência de completude e referências com a documentação mestre. (Concluído)
+
+- [x] **Task 19: Script Canônico de Verificação RLS (`supabase/verify_isolation.sql`)**
+  - [x] Criar script transacional com simulação de `Usuario_A` e `Usuario_B` via JWT claims.
+  - [x] Testar isolamento estrito de leitura, escrita, atualização e deleção cruzada.
+  - *Critério de Verificação:* Validação de sintaxe SQL no PostgreSQL/Supabase. (Concluído)
+
+- [x] **Task 20: Reforço nas Migrações SQL e Recarga de Schema PostgREST**
+  - [x] Adicionar comando `NOTIFY pgrst, 'reload schema';` ao final de `20261015000001_multi_user_auth.sql` e `supabase/schema.sql`.
+  - [x] Reforçar trava `NOT NULL DEFAULT auth.uid()` na coluna `user_id`.
+  - *Critério de Verificação:* Inspeção de conformidade DDL. (Concluído)
+
+- [x] **Task 21: Limpeza Atômica de Memória e Cache no Logout**
+  - [x] Adicionar método `resetProdutos: () => void` em `src/store/useProductStore.ts`.
+  - [x] Invocar limpeza de `useProductStore` e `useDraftStore` no `finally` de `useAuthStore.signOut()`.
+  - *Critério de Verificação:* `bun run typecheck` e `bun run lint`. (Concluído)
+
+- [x] **Task 22: Sincronização Documental & Validação de Qualidade**
+  - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md`, `README.md` e `tasks/todo.md`.
+  - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
+
+---
+
+## Checkpoints de Validação
+
+- [x] **Checkpoint 1 (Após Tasks 1 e 2):** Slop e dependências fantasmas eliminados, Supabase SDK instalado e TypeScript 100% limpo.
+- [x] **Checkpoint 2 (Após Tasks 3 e 4):** Script SQL pronto para o editor do Supabase, variáveis de ambiente e cliente Supabase inicializados.
+- [x] **Checkpoint 3 (Após Tasks 5 e 6):** Deep module e tela de configuração apontando para a nuvem Supabase com typecheck/lint verdes.
+- [x] **Checkpoint 4 (Após Tasks 7 e 8):** Código e infra legados removidos, repositório 100% Serverless, documentação e checklist concluídos.
+- [x] **Checkpoint 5 (Após Tasks 11 e 12):** Migrações canônicas versionadas para Supabase CLI e Store Zustand de autenticação implementada.
+- [x] **Checkpoint 6 (Após Tasks 13 e 14):** Telas nativas de Login e Cadastro funcionais, com roteamento protegido e splash/flicker blindados.
+- [x] **Checkpoint 7 (Após Tasks 15, 16 e 17):** Storage e PostgREST isolados por vendedor, gestão de perfil em configurações e suíte de linters/typecheck 100% verde.
+- [x] **Checkpoint 8 (Após Tasks 18 a 22):** Roadmap perene documentado, script de verificação RLS criado, reload de PostgREST padronizado e limpeza de logout offline blindada.

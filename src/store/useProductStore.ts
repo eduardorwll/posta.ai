@@ -12,6 +12,7 @@ interface ProductState {
   fetchProdutos: () => Promise<void>;
   cadastrarProduto: (produto: EnviarProdutoParams) => Promise<Produto>;
   clearError: () => void;
+  resetProdutos: () => void;
 }
 
 export const useProductStore = create<ProductState>((set, get) => ({
@@ -48,4 +49,5 @@ export const useProductStore = create<ProductState>((set, get) => ({
   },
 
   clearError: () => set({ error: null }),
+  resetProdutos: () => set({ produtos: [], isLoading: false, error: null }),
 }));

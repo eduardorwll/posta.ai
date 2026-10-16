@@ -2,26 +2,60 @@
 
 Hub de vendas multiplataforma C2C para catalogação e publicação de produtos em múltiplos canais.
 
+## 🗺️ Roadmap de Evolução
+
+Consulte o documento mestre [`ROADMAP.md`](file:///home/eduardorwll/Projects/posta-ai-app/ROADMAP.md) para detalhes completos sobre o planejamento das 5 etapas de arquitetura:
+1. **Etapa 1:** Blindagem de Isolamento Local & Verificação RLS (Concluída)
+2. **Etapa 2:** Pipeline de IA Multimodal (Google Gemini Flash)
+3. **Etapa 3:** Motor de Precificação e Inteligência de Mercado
+4. **Etapa 4:** Human-in-the-Loop & Revisão de Anúncios
+5. **Etapa 5:** Publicação Multicanal via RPA (Playwright Stealth)
+
+---
+
 ## ⚡ Features
 
-* **Captura de Fotos:** Seleção de 1 a 5 fotos (câmera ou galeria) com qualidade original máxima (`quality: 1`, sem compressão ou redimensionamento) e recuperação de fotos pendentes após reinício da Activity no Android.
-* **Formulário de Catalogação:** Cadastro de nome do produto, seleção rápida de condição (novo, como novo, seminovo, usado), categoria (roupas, eletrônicos, livros, instrumentos, casa, diversos), valor em BRL e observações.
-* **Catálogo em Cards:** Listagem dos produtos cadastrados com miniatura da foto, título, tags contextuais (`Condição • Categoria`), preço formatado em destaque e badge de status dinâmico (`pendente`, `processando_ia`, `pronto`, etc.).
-* **Navegação e Interface:** Navegação por abas com Expo Router (Capturar e Meus Produtos), Gluestack UI v5, NativeWind v5 e suporte nativo ao tema escuro oficial da marca.
+* **Autenticação Multi-Usuário & Roteamento Seguro:** Fluxo nativo completo de autenticação (`Login`, `Cadastro` com feedback amigável de verificação de e-mail e `Logout` seguro). Gerenciado com store Zustand persistente (`useAuthStore`) e guarda de navegação no Expo Router com prevenção de flicker via Splash Screen.
+* **Isolamento Estrito por Vendedor (RLS & Storage):** Cada vendedor tem acesso exclusivo aos seus próprios produtos no PostgREST (`user_id = auth.uid()`). Fotos armazenadas em caminhos isolados no Storage CDN (`{user_id}/{produto_id}/foto_{index}.jpg`) com políticas RLS no bucket `produtos`.
+* **Purga Atômica de Cache e Memória no Logout:** Encerramento de sessão com limpeza imediata de produtos e rascunhos no `useProductStore` e `useDraftStore`, imune a quedas de rede.
+* **Câmera In-App & Galeria com Pipeline Nativo:** Captura in-app (`CameraModal` com obturador silencioso e `quality: 0.85`) e seleção na galeria com downsampling e otimização nativos em C++/Java (`expo-image-manipulator`, máx 1920px Full HD e JPEG 0.85), blindando o dispositivo contra Out Of Memory (OOM).
+* **Formulário de Catalogação com Rascunho Persistente:** Cadastro completo (nome, condição, categoria, valor BRL e observações) com persistência automática no AsyncStorage (`useDraftStore`) imune a quedas de rede e reinício de processos no Android.
+* **Backend Serverless no Supabase Cloud:** Integração direta com Supabase Storage CDN (bucket `produtos`) e PostgREST, com checagem defensiva de sessão e rollback atômico de imagens em caso de erro na gravação.
+* **Catálogo em Cards:** Listagem dos produtos cadastrados do vendedor autenticado, com miniatura da foto, título, tags contextuais (`Condição • Categoria`), preço formatado em destaque e badge de status dinâmico (`pendente`, `processando_ia`, `pronto`, etc.).
+* **Navegação e Interface:** Navegação por abas com Expo Router (Capturar, Meus Produtos e Configurações com perfil do vendedor), Gluestack UI v5, NativeWind v5, feedback físico tátil (`expo-haptics`) e suporte dinâmico aos temas Claro, Escuro e Automático.
+* **Governança CI/CD e Migrações Versionadas:** Padrão canônico da Supabase CLI com `supabase/config.toml`, migrações versionadas em `supabase/migrations/` e script de teste adversarial em `supabase/verify_isolation.sql`.
+
+## ⚙️ Configuração do Supabase
+
+1. Crie um projeto no painel do [Supabase](https://supabase.com).
+2. Execute as migrações:
+   - **Via Supabase CLI / CI/CD:** Utilize o comando `supabase db push`.
+   - **Via Painel Web (SQL Editor):** Execute o script consolidado disponível em `supabase/schema.sql` (ou sequencialmente os arquivos em `supabase/migrations/`).
+3. *(Opcional)* No SQL Editor, execute o script `supabase/verify_isolation.sql` para rodar a suíte automatizada de testes e verificar o isolamento das políticas de RLS.
+4. Certifique-se de que o bucket público `produtos` foi provisionado no Supabase Storage.
+5. Crie o arquivo `.env` na raiz do projeto (baseado em `.env.example`):
+
+```bash
+EXPO_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co
+EXPO_PUBLIC_SUPABASE_ANON_KEY=sua-anon-key-aqui
+```
 
 ## 🚀 Como Executar o App
 
-Instale as dependências do projeto e inicie o servidor de desenvolvimento via Expo Go:
+Instale as dependências do projeto e inicie o servidor de desenvolvimento via Expo:
 
 ```bash
 bun install
-bun start          # ou: bun expo start
-bun run start:clean # ou: bun start -c (inicia limpando o cache)
+bun start          # inicia o Expo Metro vinculado ao IP do Tailscale
+bun run clean      # inicia limpando o cache
 ```
+
+> [!NOTE]
+> O comando `bun start` detecta automaticamente o IPv4 ativo da sua máquina na rede **Tailscale** (`100.110.221.21`), gerando o QR Code e o link do Expo Go pelo túnel VPN. Certifique-se de que o seu celular também está conectado à mesma conta do Tailscale.
 
 Para verificar tipos TypeScript e regras de linter:
 
 ```bash
-bunx tsc --noEmit
-bunx expo lint
+bun run typecheck  # tsc --noEmit
+bun run lint       # expo lint
 ```

@@ -1,5 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
   Keyboard,
@@ -15,6 +15,7 @@ import { HugeiconsIcon } from '@hugeicons/react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/AppHeader';
+import { CameraModal } from '@/components/CameraModal';
 import { ChipSelector } from '@/components/ChipSelector';
 import { PhotoGrid, type GridPhoto } from '@/components/PhotoGrid';
 import { Button, ButtonText } from '@/components/ui/button';
@@ -31,12 +32,11 @@ import { Textarea, TextareaInput } from '@/components/ui/textarea';
 import { VStack } from '@/components/ui/vstack';
 import { MaxContentWidth, Spacing, useAppTheme } from '@/constants/theme';
 import { haptic } from '@/lib/haptics';
+import { useDraftStore } from '@/store/useDraftStore';
 import { useProductStore } from '@/store/useProductStore';
 import {
   CATEGORY_LABELS,
   CONDITION_LABELS,
-  type ProductCategory,
-  type ProductCondition,
 } from '@/types/product';
 
 const MAX_PHOTOS = 5;
@@ -53,6 +53,7 @@ function parsePrice(raw: string): number {
 /**
  * Tela de captura e catalogação de produtos:
  * - Fotos em resolução original máxima (quality: 1)
+ * - Persistência automática de rascunho (useDraftStore) resistente a reinicializações
  * - Identificação visual da Foto de Capa (índice 0)
  * - Validações visuais inline com mensagens semânticas
  * - Feedback físico háptico ao salvar e validar (Clean Code + Release It!)
@@ -62,15 +63,27 @@ export default function CapturaScreen() {
   const { cadastrarProduto, isLoading, clearError } = useProductStore();
   const { palette } = useAppTheme();
 
-  const [photos, setPhotos] = useState<GridPhoto[]>([]);
-  const [nome, setNome] = useState('');
-  const [condicao, setCondicao] = useState<ProductCondition>('usado');
-  const [categoria, setCategoria] = useState<ProductCategory>('diversos');
-  const [price, setPrice] = useState('');
-  const [notes, setNotes] = useState('');
+  const {
+    nome,
+    condicao,
+    categoria,
+    price,
+    notes,
+    photos,
+    setNome,
+    setCondicao,
+    setCategoria,
+    setPrice,
+    setNotes,
+    addPhotos,
+    removePhoto,
+    clearDraft,
+  } = useDraftStore();
+
   const [isProcessing, setIsProcessing] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   const remaining = MAX_PHOTOS - photos.length;
   const priceValue = parsePrice(price);
@@ -102,22 +115,25 @@ export default function CapturaScreen() {
     return false;
   }
 
-  async function processAssets(assets: ImagePicker.ImagePickerAsset[]) {
-    setIsProcessing(true);
-    try {
-      const newPhotos: GridPhoto[] = assets.map((asset, idx) => ({
-        uri: asset.uri,
-        id: `${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
-      }));
+  const processAssets = useCallback(
+    async (assets: ImagePicker.ImagePickerAsset[]) => {
+      setIsProcessing(true);
+      try {
+        const newPhotos: GridPhoto[] = assets.map((asset, idx) => ({
+          uri: asset.uri,
+          id: `${Date.now()}-${idx}-${Math.random().toString(36).slice(2, 6)}`,
+        }));
 
-      setPhotos((current) => [...current, ...newPhotos].slice(0, MAX_PHOTOS));
-    } catch (e) {
-      console.error('Falha ao processar fotos', e);
-      setServerError('Não foi possível carregar a imagem. Tente novamente.');
-    } finally {
-      setIsProcessing(false);
-    }
-  }
+        addPhotos(newPhotos);
+      } catch (e) {
+        console.error('Falha ao processar fotos', e);
+        setServerError('Não foi possível carregar a imagem. Tente novamente.');
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [addPhotos]
+  );
 
   useEffect(() => {
     let active = true;
@@ -131,40 +147,38 @@ export default function CapturaScreen() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [processAssets]);
 
-  async function pickPhotos(source: PhotoSource) {
+  function handleCameraCapture(uri: string) {
+    if (remaining <= 0) return;
+    addPhotos([
+      {
+        id: `${Date.now()}-camera-${Math.random().toString(36).slice(2, 6)}`,
+        uri,
+      },
+    ]);
+  }
+
+  async function pickPhotosFromLibrary() {
     if (remaining <= 0) return;
     setServerError(null);
 
-    if (!(await ensurePermission(source))) return;
+    if (!(await ensurePermission('library'))) return;
 
-    const result =
-      source === 'camera'
-        ? await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 })
-        : await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ['images'],
-            allowsMultipleSelection: true,
-            selectionLimit: remaining,
-            orderedSelection: true,
-            quality: 1,
-          });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsMultipleSelection: true,
+      selectionLimit: remaining,
+      orderedSelection: true,
+      quality: 1,
+    });
 
     if (result.canceled) return;
     await processAssets(result.assets.slice(0, remaining));
   }
 
-  function removePhoto(id: string) {
-    setPhotos((current) => current.filter((p) => p.id !== id));
-  }
-
   function resetForm() {
-    setPhotos([]);
-    setNome('');
-    setCondicao('usado');
-    setCategoria('diversos');
-    setPrice('');
-    setNotes('');
+    clearDraft();
     setSubmitted(false);
     setServerError(null);
     clearError();
@@ -233,8 +247,10 @@ export default function CapturaScreen() {
               photos={photos}
               maxPhotos={MAX_PHOTOS}
               isProcessing={isProcessing}
-              onAddFromCamera={() => pickPhotos('camera')}
-              onAddFromLibrary={() => pickPhotos('library')}
+              onAddFromCamera={() => {
+                if (remaining > 0) setIsCameraOpen(true);
+              }}
+              onAddFromLibrary={pickPhotosFromLibrary}
               onRemove={removePhoto}
             />
             {isPhotosInvalid && (
@@ -389,6 +405,12 @@ export default function CapturaScreen() {
           </Button>
         </VStack>
       </ScrollView>
+
+      <CameraModal
+        visible={isCameraOpen}
+        onClose={() => setIsCameraOpen(false)}
+        onCapture={handleCameraCapture}
+      />
     </KeyboardAvoidingView>
   );
 }

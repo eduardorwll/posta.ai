@@ -35,6 +35,7 @@ export const CATEGORY_LABELS: Record<ProductCategory, string> = {
 export interface Produto {
   id: string;
   created_at: string;
+  user_id?: string;
   fotos: string[];
   observacoes_usuario: string;
   preco_usuario: number;

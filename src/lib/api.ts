@@ -1,10 +1,11 @@
 import { Platform } from 'react-native';
+import { decode } from 'base64-arraybuffer';
+import { ImageManipulator, manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import { supabase, isSupabaseConfigured } from './supabase';
 import type { Produto } from '@/types/product';
-import { useApiConfigStore } from '@/store/useApiConfigStore';
 
 export function getApiBaseUrl(): string {
-  const url = useApiConfigStore.getState().apiUrl || 'http://100.110.221.21:8000';
-  return url.trim().replace(/\/+$/, '');
+  return process.env.EXPO_PUBLIC_SUPABASE_URL || 'https://supabase.co';
 }
 
 export interface ApiError {
@@ -24,33 +25,67 @@ export class ApiException extends Error {
   }
 }
 
-async function handleResponse<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    let errorMessage = `Erro ${response.status}`;
-    let errorDetail: string | undefined;
+function normalizarUri(rawUri: string): string {
+  let uri = rawUri;
+  if (Platform.OS === 'android' && !uri.startsWith('file://') && !uri.startsWith('content://')) {
+    uri = `file://${uri}`;
+  }
+  return uri;
+}
 
-    try {
-      const errorData = await response.json();
-      if (errorData) {
-        if (typeof errorData.detail === 'string') {
-          errorDetail = errorData.detail;
-          errorMessage = errorData.detail;
-        } else if (Array.isArray(errorData.detail)) {
-          errorMessage = errorData.detail.map((d: any) => d.msg || JSON.stringify(d)).join(', ');
-          errorDetail = errorMessage;
-        } else if (errorData.message) {
-          errorMessage = errorData.message;
-          errorDetail = errorData.message;
-        }
+function gerarUuid(): string {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === 'x' ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+/**
+ * Otimização e downsampling de imagem no nível nativo (C++/Java).
+ * Reduz fotos de câmeras de alta resolução (50MP) para Full HD (1920px máx)
+ * fora da heap JavaScript do motor Hermes, gerando a representação Base64/JPEG otimizada.
+ */
+async function otimizarFotoParaUpload(uri: string): Promise<{ base64?: string; uri: string }> {
+  const safeUri = normalizarUri(uri);
+
+  try {
+    const context = ImageManipulator.manipulate(safeUri);
+    const initialRef = await context.renderAsync();
+
+    if (initialRef.width > 1920 || initialRef.height > 1920) {
+      if (initialRef.width >= initialRef.height) {
+        context.resize({ width: 1920 });
+      } else {
+        context.resize({ height: 1920 });
       }
-    } catch {
-      errorMessage = response.statusText || errorMessage;
+      const rendered = await context.renderAsync();
+      const result = await rendered.saveAsync({
+        format: SaveFormat.JPEG,
+        compress: 0.85,
+        base64: true,
+      });
+      return { uri: result.uri, base64: result.base64 };
     }
 
-    throw new ApiException(errorMessage, response.status, errorDetail);
+    const result = await initialRef.saveAsync({
+      format: SaveFormat.JPEG,
+      compress: 0.85,
+      base64: true,
+    });
+    return { uri: result.uri, base64: result.base64 };
+  } catch {
+    try {
+      const fallback = await manipulateAsync(
+        safeUri,
+        [{ resize: { width: 1920 } }],
+        { format: SaveFormat.JPEG, compress: 0.85, base64: true }
+      );
+      return { uri: fallback.uri, base64: fallback.base64 };
+    } catch {
+      return { uri: safeUri };
+    }
   }
-
-  return response.json();
 }
 
 export interface EnviarProdutoParams {
@@ -62,59 +97,197 @@ export interface EnviarProdutoParams {
   fotos: string[];
 }
 
-export async function enviarProduto(params: EnviarProdutoParams): Promise<Produto> {
-  const formData = new FormData();
-
-  formData.append('nome', params.nome);
-  formData.append('condicao', params.condicao);
-  formData.append('categoria', params.categoria);
-  formData.append('observacoes_usuario', params.observacoes_usuario);
-  formData.append('preco_usuario', params.preco_usuario.toString());
-
-  for (let i = 0; i < params.fotos.length; i++) {
-    const rawUri = params.fotos[i];
-    let uri = rawUri;
-    // On Android, file URI must have a scheme like file:// or content://
-    if (Platform.OS === 'android' && !uri.startsWith('file://') && !uri.startsWith('content://')) {
-      uri = `file://${uri}`;
-    }
-
-    const filename = uri.split('/').pop() || `photo_${i}.jpg`;
-    const cleanFilename = filename.split('?')[0];
-    const match = /\.(\w+)$/.exec(cleanFilename);
-    const ext = match ? match[1].toLowerCase() : 'jpg';
-    let type = 'image/jpeg';
-    if (ext === 'png') type = 'image/png';
-    else if (ext === 'webp') type = 'image/webp';
-    else if (ext === 'heic' || ext === 'heif') type = 'image/heic';
-    const finalName = cleanFilename.includes('.') ? cleanFilename : `photo_${i}.${ext}`;
-
-    formData.append('fotos', {
-      uri,
-      name: finalName,
-      type,
-    } as any);
+/**
+ * Módulo Profundo: cadastrarProduto
+ * Upload direto de imagens no Supabase Storage com ArrayBuffer e persistência relacional no PostgreSQL.
+ * Implementa rollback atômico: se a gravação no banco falhar, remove as fotos enviadas do bucket.
+ */
+export async function cadastrarProduto(params: EnviarProdutoParams): Promise<Produto> {
+  if (!isSupabaseConfigured) {
+    throw new ApiException(
+      'Supabase não configurado. Adicione EXPO_PUBLIC_SUPABASE_URL e EXPO_PUBLIC_SUPABASE_ANON_KEY no arquivo .env.',
+      500
+    );
   }
 
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/produtos`, {
-    method: 'POST',
-    body: formData,
-  });
+  // Checagem defensiva de sessão ativa: aborta antes do processamento de fotos para economizar rede móvel
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
 
-  return handleResponse<Produto>(response);
+  if (authError || !user) {
+    throw new ApiException(
+      'Sessão expirada ou usuário não autenticado. Por favor, acesse sua conta novamente para cadastrar o produto.',
+      401
+    );
+  }
+
+  const produtoId = gerarUuid();
+  const uploadedUrls: string[] = [];
+  const uploadedPaths: string[] = [];
+
+  try {
+    // 1. Processar e fazer upload de todas as fotos para a pasta do vendedor {user_id}/{produto_id}/...
+    for (let i = 0; i < params.fotos.length; i++) {
+      const rawUri = params.fotos[i];
+      const optimized = await otimizarFotoParaUpload(rawUri);
+      const filePath = `${user.id}/${produtoId}/foto_${i}.jpg`;
+
+      let arrayBuffer: ArrayBuffer;
+      if (optimized.base64) {
+        arrayBuffer = decode(optimized.base64);
+      } else {
+        const response = await fetch(optimized.uri);
+        const blob = await response.blob();
+        arrayBuffer = await blob.arrayBuffer();
+      }
+
+      const { error: uploadError } = await supabase.storage
+        .from('produtos')
+        .upload(filePath, arrayBuffer, {
+          contentType: 'image/jpeg',
+          upsert: true,
+        });
+
+      if (uploadError) {
+        throw new ApiException(`Erro no upload da foto ${i + 1}: ${uploadError.message}`);
+      }
+
+      const { data: publicUrlData } = supabase.storage
+        .from('produtos')
+        .getPublicUrl(filePath);
+
+      uploadedUrls.push(publicUrlData.publicUrl);
+      uploadedPaths.push(filePath);
+    }
+
+    // 2. Persistir registro na tabela 'produtos' no Supabase PostgreSQL com user_id
+    const { data: row, error: dbError } = await supabase
+      .from('produtos')
+      .insert({
+        id: produtoId,
+        user_id: user.id,
+        nome: params.nome.trim(),
+        condicao: params.condicao,
+        categoria: params.categoria,
+        preco_usuario: params.preco_usuario,
+        observacoes_usuario: params.observacoes_usuario?.trim() || '',
+        fotos: uploadedUrls,
+        status: 'pendente',
+      })
+      .select()
+      .single();
+
+    if (dbError) {
+      throw new ApiException(`Erro ao salvar produto no banco: ${dbError.message}`);
+    }
+
+    return {
+      id: row.id,
+      created_at: row.created_at,
+      user_id: row.user_id,
+      nome: row.nome,
+      condicao: row.condicao,
+      categoria: row.categoria,
+      observacoes_usuario: row.observacoes_usuario || '',
+      preco_usuario: Number(row.preco_usuario),
+      fotos: row.fotos || [],
+      status: row.status,
+      descricao_curta: row.descricao_curta,
+      descricao_longa: row.descricao_longa,
+      preco_medio_mercado: row.preco_medio_mercado ? Number(row.preco_medio_mercado) : undefined,
+      preco_sugerido: row.preco_sugerido ? Number(row.preco_sugerido) : undefined,
+    };
+  } catch (error: any) {
+    // Rollback defensivo: limpa fotos do Storage em caso de erro na transação
+    if (uploadedPaths.length > 0) {
+      await supabase.storage.from('produtos').remove(uploadedPaths).catch(() => {});
+    }
+    if (error instanceof ApiException) {
+      throw error;
+    }
+    throw new ApiException(error?.message || 'Falha inesperada ao cadastrar produto', 500);
+  }
 }
 
+// Alias de compatibilidade
+export const enviarProduto = cadastrarProduto;
+
+/**
+ * Consulta o catálogo de produtos no Supabase ordenados por data decrescente
+ * As regras de RLS garantem que apenas produtos do vendedor autenticado sejam retornados.
+ */
 export async function obterProdutos(): Promise<Produto[]> {
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/produtos`);
-  return handleResponse<Produto[]>(response);
+  if (!isSupabaseConfigured) {
+    return [];
+  }
+
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  if (!session) {
+    return [];
+  }
+
+  const { data, error } = await supabase
+    .from('produtos')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    throw new ApiException(`Erro ao obter produtos: ${error.message}`);
+  }
+
+  return (data || []).map((row: any) => ({
+    id: row.id,
+    created_at: row.created_at,
+    user_id: row.user_id,
+    nome: row.nome,
+    condicao: row.condicao,
+    categoria: row.categoria,
+    observacoes_usuario: row.observacoes_usuario || '',
+    preco_usuario: Number(row.preco_usuario),
+    fotos: row.fotos || [],
+    status: row.status,
+    descricao_curta: row.descricao_curta,
+    descricao_longa: row.descricao_longa,
+    preco_medio_mercado: row.preco_medio_mercado ? Number(row.preco_medio_mercado) : undefined,
+    preco_sugerido: row.preco_sugerido ? Number(row.preco_sugerido) : undefined,
+  }));
 }
 
+/**
+ * Consulta um produto específico por UUID
+ */
 export async function obterProduto(id: string): Promise<Produto> {
-  const baseUrl = getApiBaseUrl();
-  const response = await fetch(`${baseUrl}/produtos/${id}`);
-  return handleResponse<Produto>(response);
+  const { data, error } = await supabase
+    .from('produtos')
+    .select('*')
+    .eq('id', id)
+    .single();
+
+  if (error || !data) {
+    throw new ApiException(error ? error.message : 'Produto não encontrado', 404);
+  }
+
+  return {
+    id: data.id,
+    created_at: data.created_at,
+    user_id: data.user_id,
+    nome: data.nome,
+    condicao: data.condicao,
+    categoria: data.categoria,
+    observacoes_usuario: data.observacoes_usuario || '',
+    preco_usuario: Number(data.preco_usuario),
+    fotos: data.fotos || [],
+    status: data.status,
+    descricao_curta: data.descricao_curta,
+    descricao_longa: data.descricao_longa,
+    preco_medio_mercado: data.preco_medio_mercado ? Number(data.preco_medio_mercado) : undefined,
+    preco_sugerido: data.preco_sugerido ? Number(data.preco_sugerido) : undefined,
+  };
 }
 
 export interface TesteConexaoResult {
@@ -124,49 +297,46 @@ export interface TesteConexaoResult {
   message: string;
 }
 
-export async function testarConexaoApi(url: string): Promise<TesteConexaoResult> {
-  const cleanUrl = url.trim().replace(/\/+$/, '');
+/**
+ * Probe de integridade e latência da conexão com o Supabase Cloud
+ */
+export async function testarConexaoApi(): Promise<TesteConexaoResult> {
+  if (!isSupabaseConfigured) {
+    return {
+      success: false,
+      latencyMs: 0,
+      message: 'Configure as credenciais do Supabase no arquivo .env para testar.',
+    };
+  }
+
   const startTime = Date.now();
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000);
-
   try {
-    const response = await fetch(`${cleanUrl}/health`, {
-      method: 'GET',
-      signal: controller.signal,
-    });
-    clearTimeout(timeoutId);
+    const { error } = await supabase
+      .from('produtos')
+      .select('id', { count: 'exact', head: true });
+
     const latencyMs = Date.now() - startTime;
 
-    if (response.ok) {
-      return {
-        success: true,
-        status: response.status,
-        latencyMs,
-        message: 'Conexão bem-sucedida!',
-      };
-    } else {
+    if (error) {
       return {
         success: false,
-        status: response.status,
         latencyMs,
-        message: `Servidor respondeu com status ${response.status}`,
+        message: `Falha no Supabase: ${error.message}`,
       };
     }
+
+    return {
+      success: true,
+      status: 200,
+      latencyMs,
+      message: 'Conexão com a Nuvem Supabase estabelecida com sucesso!',
+    };
   } catch (error: any) {
-    clearTimeout(timeoutId);
     const latencyMs = Date.now() - startTime;
-    let message = 'Falha ao conectar com o servidor';
-    if (error.name === 'AbortError' || (error.message && error.message.toLowerCase().includes('cancel'))) {
-      message = 'Tempo limite esgotado (> 5s). Verifique se o servidor está acessível na rede.';
-    } else if (error.message) {
-      message = error.message;
-    }
     return {
       success: false,
       latencyMs,
-      message,
+      message: error?.message || 'Falha ao conectar com o Supabase Cloud.',
     };
   }
 }

@@ -36,6 +36,12 @@
           "photosPermission": "O posta.ai precisa acessar suas fotos para você adicionar imagens aos seus produtos.",
           "cameraPermission": "O posta.ai precisa acessar a câmera para você fotografar seus produtos."
         }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "O posta.ai precisa acessar a câmera para você fotografar seus produtos."
+        }
       ]
     ],
     "experiments": {
