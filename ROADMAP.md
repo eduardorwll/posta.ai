@@ -62,6 +62,8 @@ flowchart LR
      - `tags`: Palavras-chave relevantes para busca em marketplaces.
 2. **Rate Limiter Global no PostgreSQL (`ia_rate_limiter` e `consumir_quota_ia`):**
    - Tabela `ia_rate_limiter` e função atômica com `SELECT ... FOR UPDATE` limitando as chamadas globais a no máximo 5 por minuto em todo o sistema.
+   - **Hardening de Segurança e Blindagem contra DoS (`20261016000001_security_hardening.sql`):** Função protegida com `SET search_path = public`, com `REVOKE EXECUTE` de roles públicas (`anon` e `authenticated`) e concessão restrita à `service_role` (Edge Functions), eliminando qualquer risco de esgotamento malicioso externo da cota.
+   - **Eliminação de Listagem Pública no Storage:** Remoção da política ampla de `SELECT` em `storage.objects`, garantindo que terceiros não consigam enumerar pastas de outros usuários.
 3. **Módulo Profundo & Gestão de Produtos no Mobile:**
    - Métodos `enriquecerProdutoComIa(produtoId)`, `atualizarProduto(id, dados)` e `removerProduto(id, fotos)` em `src/lib/api.ts`.
    - Ação reativa `useProductStore.enriquecerProduto` que atualiza o estado para `processando_ia` e em seguida `pronto`.
