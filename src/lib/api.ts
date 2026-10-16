@@ -373,10 +373,19 @@ export async function enriquecerProdutoComIa(produtoId: string): Promise<Enrique
     });
 
     if (error) {
-      console.warn('[enriquecerProdutoComIa] Erro ao invocar Edge Function:', error.message);
+      let detailMsg = error.message;
+      try {
+        if ('context' in error && (error as any).context && typeof (error as any).context.json === 'function') {
+          const errBody = await (error as any).context.json();
+          detailMsg = errBody?.error || errBody?.detalhes || JSON.stringify(errBody);
+        }
+      } catch {
+        // Guarda defensiva
+      }
+      console.warn('[enriquecerProdutoComIa] Erro ao invocar Edge Function:', detailMsg);
       return {
         success: false,
-        error: error.message || 'Falha ao processar anúncio com IA.',
+        error: detailMsg || 'Falha ao processar anúncio com IA.',
       };
     }
 

@@ -153,5 +153,51 @@ CREATE POLICY "Vendedor remove fotos de sua pasta"
         (storage.foldername(name))[1] = (select auth.uid())::text
     );
 
--- 6. Força recarga imediata do cache de schemas do PostgREST
+-- 6. Semáforo Atômico Global para Rate Limiting de IA (Trava Rígida Anti-Spike)
+CREATE TABLE IF NOT EXISTS public.ia_rate_limiter (
+    chave TEXT PRIMARY KEY,
+    chamadas INT NOT NULL DEFAULT 0,
+    janela_inicio TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+INSERT INTO public.ia_rate_limiter (chave, chamadas, janela_inicio)
+VALUES ('gemini_global', 0, NOW())
+ON CONFLICT (chave) DO NOTHING;
+
+ALTER TABLE public.ia_rate_limiter ENABLE ROW LEVEL SECURITY;
+
+CREATE OR REPLACE FUNCTION public.consumir_quota_ia(max_por_minuto INT DEFAULT 5)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    rec RECORD;
+    agora TIMESTAMPTZ := NOW();
+BEGIN
+    SELECT * INTO rec 
+    FROM public.ia_rate_limiter 
+    WHERE chave = 'gemini_global' 
+    FOR UPDATE;
+
+    IF agora >= rec.janela_inicio + INTERVAL '60 seconds' THEN
+        UPDATE public.ia_rate_limiter 
+        SET chamadas = 1, janela_inicio = agora 
+        WHERE chave = 'gemini_global';
+        RETURN TRUE;
+    END IF;
+
+    IF rec.chamadas >= max_por_minuto THEN
+        RETURN FALSE;
+    END IF;
+
+    UPDATE public.ia_rate_limiter 
+    SET chamadas = rec.chamadas + 1 
+    WHERE chave = 'gemini_global';
+
+    RETURN TRUE;
+END;
+$$;
+
+-- 7. Força recarga imediata do cache de schemas do PostgREST
 NOTIFY pgrst, 'reload schema';

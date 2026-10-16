@@ -28,7 +28,7 @@ serve(async (req: Request) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') ?? '';
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
     const geminiApiKey = Deno.env.get('GEMINI_API_KEY') ?? '';
-    const geminiModel = Deno.env.get('GEMINI_MODEL') ?? 'gemini-1.5-flash-8b';
+    const geminiModel = Deno.env.get('GEMINI_MODEL') ?? 'gemini-3.5-flash-lite';
 
     if (!supabaseUrl || !supabaseServiceKey) {
       return new Response(
@@ -101,6 +101,26 @@ serve(async (req: Request) => {
       .from('produtos')
       .update({ status: 'processando_ia' })
       .eq('id', produtoId);
+
+    // 5.1. Barreira Atômica Global de Rate Limiting (Máx 5 requisições/minuto no sistema inteiro)
+    const { data: quotaLiberada, error: quotaError } = await supabaseAdmin.rpc('consumir_quota_ia', {
+      max_por_minuto: 5,
+    });
+
+    if (quotaError || quotaLiberada === false) {
+      console.warn('[enriquecer-produto] Quota global de IA excedida (limite estrito de 5/min):', quotaError?.message);
+      await supabaseAdmin
+        .from('produtos')
+        .update({ status: 'pendente' })
+        .eq('id', produtoId);
+
+      return new Response(
+        JSON.stringify({
+          error: 'Limite global de segurança atingido (máx 5 análises com IA por minuto em todo o sistema). Por favor, aguarde alguns instantes e tente novamente.',
+        }),
+        { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // 6. Download e Otimização das Fotos para o Gemini (258 tokens por foto)
     const fotos = Array.isArray(produto.fotos) ? produto.fotos.slice(0, 5) : [];
