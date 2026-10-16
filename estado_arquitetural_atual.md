@@ -1,6 +1,6 @@
 # Estado Arquitetural Atual — posta.ai
 
-> Fotografia do repositório `posta-ai-app` atualizada em 2026-10-15. Fase 3 concluída com arquitetura profissional orientada por **`addyosmani/agent-skills`** (`code-simplification`, `deprecation-and-migration`, `planning-and-task-breakdown`, `source-driven-development`), **`ui-ux-pro-max`** e regras de engenharia de software canônicas (*Clean Architecture*, *APOSD*, *Release It!* e *Code Complete*).
+> Fotografia do repositório `posta-ai-app` atualizada em 2026-10-16. Fase 3 concluída com arquitetura profissional orientada por **`addyosmani/agent-skills`** (`code-simplification`, `deprecation-and-migration`, `planning-and-task-breakdown`, `source-driven-development`), **`ui-ux-pro-max`** e regras de engenharia de software canônicas (*Clean Architecture*, *APOSD*, *Release It!* e *Code Complete*).
 > Fonte de contexto de negócio: `docs/documentacao_mestre_posta_ai.md`.
 
 ---
@@ -160,9 +160,10 @@ postaaiapp/
    - **Rate Limiter Global no PostgreSQL:** Função atômica `consumir_quota_ia(5)` com `SELECT ... FOR UPDATE` limita o teto global de chamadas a 5 requisições por minuto somadas em todo o sistema.
    - **Hardening contra DoS & Sequestro de Namespace:** Função declarada com `SET search_path = public` e execução revogada para roles públicas (`anon` e `authenticated`). Apenas a `service_role` (Edge Functions) possui autorização de execução, impedindo ataques volumétricos externos via REST PostgREST.
 7. **Blindagem de Rede e Resiliência de Gateway no Supabase Client:**
-   - Middleware `customFetch` intercepta respostas HTTP com falha (`!response.ok`) retornadas como HTML (erros Cloudflare 502/503/504 ou portais cativos) e as converte em JSON sintético estruturado.
-   - Elimina o crash do motor Hermes (`JSON Parse error: Unexpected character: <`).
-   - A função `traduzirErroAuth` em `src/store/useAuthStore.ts` centraliza a tradução de limites de taxa de e-mail, confirmações pendentes, credenciais inválidas e falhas de conexão para mensagens amigáveis em português.
+   - Middleware `customFetch` em [`src/lib/supabase.ts`](file:///home/eduardorwll/Projects/posta-ai-app/src/lib/supabase.ts) injeta cabeçalhos canônicos de API (`Accept: application/json, text/plain, */*` e `User-Agent` nativo de navegador móvel) para prevenir bloqueios e desafios anti-bot (Cloudflare Bot Fight Mode).
+   - Intercepta respostas de erro não-200 retornadas como HTML (Cloudflare 403/502/503/429 ou portais cativos Wi-Fi), extrai defensivamente o `<title>` da página HTML com limite de segurança de 1.500 caracteres e converte o erro em payload JSON estruturado.
+   - Elimina em 100% o crash fatal do motor Hermes (`JSON Parse error: Unexpected character: <`).
+   - A função `traduzirErroAuth` em [`src/store/useAuthStore.ts`](file:///home/eduardorwll/Projects/posta-ai-app/src/store/useAuthStore.ts) preserva o diagnóstico de gateway e centraliza mensagens amigáveis e acionáveis em português (orientando a alternância para dados móveis caso haja bloqueio por VPN/Wi-Fi acadêmico, limites de e-mail, credenciais inválidas e falhas de conexão).
 
 ---
 
