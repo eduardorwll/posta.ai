@@ -28,11 +28,11 @@ export function SwipeableTabScreen({
 }: SwipeableTabScreenProps) {
   const panGesture = Gesture.Pan()
     .runOnJS(true)
-    .activeOffsetX([-35, 35])
+    .activeOffsetX([-30, 30])
     .failOffsetY([-18, 18])
     .onEnd((event) => {
-      const distanceThreshold = 55;
-      const velocityThreshold = 350;
+      const distanceThreshold = 45;
+      const velocityThreshold = 250;
 
       // Deslize da direita para a esquerda (próxima aba)
       if ((event.translationX < -distanceThreshold || event.velocityX < -velocityThreshold) && nextTab) {

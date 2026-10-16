@@ -15,7 +15,7 @@ Consulte o documento mestre [`ROADMAP.md`](file:///home/eduardorwll/Projects/pos
 
 ## ⚡ Features
 
-* **Navegação Gestual por Swipe:** Transição fluida entre as abas (`Capturar` ⇄ `Meus Produtos` ⇄ `Configuração`) através de gestos horizontais nativos (`react-native-gesture-handler`), calibrada para não interferir nas rolagens verticais e com feedback tátil físico (`expo-haptics`).
+* **Navegação Gestual por Swipe & Animação Nativa de Slide:** Transição contínua e suave entre as abas (`Capturar` ⇄ `Meus Produtos` ⇄ `Configuração`) via Native Driver (GPU/RenderThread em 60/120 FPS), calibrada com gestos horizontais nativos (`react-native-gesture-handler`) e feedback tátil físico (`expo-haptics`) sem interferência na rolagem vertical.
 * **Tela de Detalhes, Edição Manual & IA sob Demanda (`/produto/[id]`):** Carrossel paginado de fotos, edição manual de todos os campos (título, preço, condição, categoria, notas e descrições), botão de acionamento ou regeneração de anúncios com IA sem necessidade de fotografar novamente, e exclusão atômica.
 * **Exclusão Atômica com Limpeza de Storage:** Exclusão coordenada que remove o registro do PostgreSQL e simultaneamente purga as fotos da pasta do vendedor no Supabase Storage CDN (`supabase.storage.from('produtos').remove(...)`).
 * **Pipeline de IA Multimodal Serverless de Custo Zero (Gemini 3.5 Flash-Lite):** Edge Function Deno (`supabase/functions/enriquecer-produto/`) que processa fotos e dados do vendedor com **Google Gemini 3.5 Flash-Lite** no Free Tier ($0,00). Gera título comercial de alto impacto, descrição curta em tópicos e copywriting completo formatado em JSON estrito.

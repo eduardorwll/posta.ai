@@ -1,11 +1,13 @@
 import { Camera01Icon, ShoppingBag01Icon, Settings01Icon } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import { Tabs } from 'expo-router';
+import { Easing, useWindowDimensions } from 'react-native';
 
 import { useAppTheme } from '@/constants/theme';
 
 export default function TabsLayout() {
   const { palette } = useAppTheme();
+  const { width: screenWidth } = useWindowDimensions();
 
   return (
     <Tabs
@@ -18,6 +20,26 @@ export default function TabsLayout() {
           backgroundColor: palette.surface,
           borderTopColor: palette.border,
         },
+        // Transição de slide fluida via Native Driver (zero overhead na JS thread)
+        transitionSpec: {
+          animation: 'timing',
+          config: {
+            duration: 220,
+            easing: Easing.out(Easing.cubic),
+          },
+        },
+        sceneStyleInterpolator: ({ current }) => ({
+          sceneStyle: {
+            transform: [
+              {
+                translateX: current.progress.interpolate({
+                  inputRange: [-1, 0, 1],
+                  outputRange: [-screenWidth, 0, screenWidth],
+                }),
+              },
+            ],
+          },
+        }),
       }}>
       <Tabs.Screen
         name="captura"

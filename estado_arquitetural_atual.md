@@ -146,10 +146,10 @@ postaaiapp/
    - A tabela `produtos` possui Row Level Security (RLS) estrita: `SELECT`, `INSERT`, `UPDATE` e `DELETE` restritos a `(select auth.uid()) = user_id`.
    - O bucket `produtos` possui política de inserção, atualização e remoção validando `(storage.foldername(name))[1] = (select auth.uid())::text`.
    - Índice composto `idx_produtos_user_created ON produtos(user_id, created_at DESC)` acelera as buscas do catálogo do vendedor.
-4. **Navegação Gestual por Swipe entre Abas (`SwipeableTabScreen.tsx`):**
-   - Implementado com `react-native-gesture-handler` (`Gesture.Pan()`), configurado com `failOffsetY([-18, 18])` e `activeOffsetX([-35, 35])`.
-   - Prioriza a rolagem vertical de `ScrollView` e `FlatList`, eliminando conflitos de gesto.
-   - Dispara transições de aba (`router.navigate`) acompanhadas de feedback háptico (`haptic.selection()`).
+4. **Navegação Gestual e Transição Nativa de Slide entre Abas (`SwipeableTabScreen.tsx` e `TabsLayout`):**
+   - Transição horizontal animada via `transitionSpec` (timing de 220ms com cubic easing) e `sceneStyleInterpolator` interpolando `translateX` dinamicamente conforme `useWindowDimensions()`.
+   - Executada 100% no Native Driver (GPU/RenderThread em 60/120 FPS) sem crossing de bridge ou re-renders na JS thread do Hermes.
+   - Detecção de gestos via `Gesture.Pan()` em `SwipeableTabScreen.tsx` calibrada (`activeOffsetX([-30, 30])`, `failOffsetY([-18, 18])`, limiares de 45px e 250px/s) para resposta instantânea e feedback háptico (`haptic.selection()`).
 5. **Tela de Detalhes, Edição Manual e IA sob Demanda (`src/app/produto/[id].tsx`):**
    - Permite visualizar o carrossel de fotos, rodar a IA sob demanda em produtos já cadastrados ("✨ Gerar Anúncio com IA" / "🔄 Regenerar com IA") e editar qualquer campo manualmente.
    - Evita a necessidade de tirar novas fotos para testar novas respostas da IA ou atualizar dados comerciais.

@@ -199,6 +199,20 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
   - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md`, `README.md` e `tasks/todo.md`.
   - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
 
+## Animação de Transição Nativa (Slide entre Abas)
+
+- [x] **Task 38: Implementação da Animação Nativa de Slide no `TabsLayout` (`src/app/(tabs)/_layout.tsx`)**
+  - [x] Configurar `transitionSpec` (timing de 220ms com cubic easing) e `sceneStyleInterpolator` com interpolação de `translateX` no Native Driver.
+  - *Critério de Verificação:* `bun run typecheck` e `bun run lint`. (Concluído)
+
+- [x] **Task 39: Calibração de Sensibilidade do Gesto em `SwipeableTabScreen.tsx`**
+  - [x] Ajustar limiares de distância (`45px`) e velocidade (`250px/s`) para resposta imediata ao swipe, mantendo `failOffsetY` para blindar a rolagem vertical.
+  - *Critério de Verificação:* `bun run typecheck` e `bun run lint`. (Concluído)
+
+- [x] **Task 40: Sincronização Documental & Validação de Qualidade Final**
+  - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md`, `README.md` e `tasks/todo.md`.
+  - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
+
 ---
 
 ## Checkpoints de Validação
@@ -215,5 +229,7 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
 - [x] **Checkpoint 10 (Após Tasks 27 a 31):** Edge Function de IA Gemini 1.5 Flash-8B criada, módulo profundo no mobile acoplado e feedback visual integrado.
 - [x] **Checkpoint 11 (Após Tasks 32 a 35):** Navegação por swipe entre abas ativa, edição manual de produtos, enriquecimento de IA sob demanda e exclusão atômica operacionais.
 - [x] **Checkpoint 12 (Após Tasks 36 e 37):** Container GestureHandlerRootView configurado na raiz com flex: 1, eliminando o erro de GestureDetector em tempo de execução.
+- [x] **Checkpoint 13 (Após Tasks 38 a 40):** Animação de slide contínuo horizontal entre abas ativa via Native Driver com interpolação dinâmica de translateX e calibração fina de gestos.
+
 
 
