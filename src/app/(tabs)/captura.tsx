@@ -18,6 +18,7 @@ import { AppHeader } from '@/components/AppHeader';
 import { CameraModal } from '@/components/CameraModal';
 import { ChipSelector } from '@/components/ChipSelector';
 import { PhotoGrid, type GridPhoto } from '@/components/PhotoGrid';
+import { SwipeableTabScreen } from '@/components/SwipeableTabScreen';
 import { Button, ButtonText } from '@/components/ui/button';
 import {
   FormControl,
@@ -233,9 +234,10 @@ export default function CapturaScreen() {
   }
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1, backgroundColor: palette.background }}>
+    <SwipeableTabScreen nextTab="/(tabs)/produtos">
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1, backgroundColor: palette.background }}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
@@ -422,5 +424,6 @@ export default function CapturaScreen() {
         onCapture={handleCameraCapture}
       />
     </KeyboardAvoidingView>
+  </SwipeableTabScreen>
   );
 }

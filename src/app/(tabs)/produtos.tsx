@@ -19,6 +19,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/AppHeader';
 import { ProductCard } from '@/components/ProductCard';
+import { SwipeableTabScreen } from '@/components/SwipeableTabScreen';
 import { Button, ButtonText } from '@/components/ui/button';
 import { HStack } from '@/components/ui/hstack';
 import { VStack } from '@/components/ui/vstack';
@@ -83,11 +84,19 @@ export default function ProdutosScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: palette.background }}>
+    <SwipeableTabScreen
+      previousTab="/(tabs)/captura"
+      nextTab="/(tabs)/configuracao"
+      style={{ backgroundColor: palette.background }}>
       <FlatList
         data={filteredProdutos}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <ProductCard produto={item} />}
+        renderItem={({ item }) => (
+          <ProductCard
+            produto={item}
+            onPress={() => router.push(`/produto/${item.id}` as any)}
+          />
+        )}
         ListHeaderComponent={
           <VStack className="gap-3 mb-3">
             <AppHeader subtitle="Catálogo de produtos cadastrados para venda" />
@@ -294,7 +303,7 @@ export default function ProdutosScreen() {
           paddingHorizontal: Spacing.four,
         }}
       />
-    </View>
+    </SwipeableTabScreen>
   );
 }
 

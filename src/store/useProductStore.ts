@@ -1,7 +1,14 @@
 import { create } from 'zustand';
 
 import type { Produto } from '@/types/product';
-import { enviarProduto, obterProdutos, enriquecerProdutoComIa, type EnviarProdutoParams } from '@/lib/api';
+import {
+  enviarProduto,
+  obterProdutos,
+  enriquecerProdutoComIa,
+  atualizarProduto as apiAtualizarProduto,
+  removerProduto as apiRemoverProduto,
+  type EnviarProdutoParams,
+} from '@/lib/api';
 
 export type NovoProduto = Pick<Produto, 'nome' | 'condicao' | 'categoria' | 'fotos' | 'observacoes_usuario' | 'preco_usuario'>;
 
@@ -11,6 +18,8 @@ interface ProductState {
   error: string | null;
   fetchProdutos: () => Promise<void>;
   cadastrarProduto: (produto: EnviarProdutoParams) => Promise<Produto>;
+  atualizarProduto: (id: string, dados: Partial<Produto>) => Promise<Produto>;
+  removerProduto: (id: string, fotos?: string[]) => Promise<void>;
   enriquecerProduto: (produtoId: string) => Promise<void>;
   clearError: () => void;
   resetProdutos: () => void;
@@ -44,6 +53,37 @@ export const useProductStore = create<ProductState>((set, get) => ({
       return novoProduto;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Erro ao cadastrar produto';
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
+
+  atualizarProduto: async (id: string, dados: Partial<Produto>) => {
+    set({ isLoading: true, error: null });
+    try {
+      const produtoAtualizado = await apiAtualizarProduto(id, dados);
+      set((state) => ({
+        produtos: state.produtos.map((p) => (p.id === id ? produtoAtualizado : p)),
+        isLoading: false,
+      }));
+      return produtoAtualizado;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao atualizar produto';
+      set({ error: errorMessage, isLoading: false });
+      throw error;
+    }
+  },
+
+  removerProduto: async (id: string, fotos?: string[]) => {
+    set({ isLoading: true, error: null });
+    try {
+      await apiRemoverProduto(id, fotos);
+      set((state) => ({
+        produtos: state.produtos.filter((p) => p.id !== id),
+        isLoading: false,
+      }));
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao remover produto';
       set({ error: errorMessage, isLoading: false });
       throw error;
     }

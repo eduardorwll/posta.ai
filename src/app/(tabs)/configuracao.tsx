@@ -6,6 +6,7 @@ import { useAuthStore } from '@/store/useAuthStore';
 import { testarConexaoApi, TesteConexaoResult } from '@/lib/api';
 import { isSupabaseConfigured, supabaseUrl } from '@/lib/supabase';
 import { AppHeader } from '@/components/AppHeader';
+import { SwipeableTabScreen } from '@/components/SwipeableTabScreen';
 import { HugeiconsIcon } from '@hugeicons/react-native';
 import {
   CheckmarkCircle02Icon,
@@ -99,9 +100,12 @@ export default function ConfiguracaoScreen() {
     : 'Não configurado (.env)';
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1, backgroundColor: palette.background }}>
+    <SwipeableTabScreen
+      previousTab="/(tabs)/produtos"
+      style={{ backgroundColor: palette.background }}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={{ flex: 1, backgroundColor: palette.background }}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
@@ -376,5 +380,6 @@ export default function ConfiguracaoScreen() {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
+  </SwipeableTabScreen>
   );
 }

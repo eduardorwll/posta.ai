@@ -290,6 +290,106 @@ export async function obterProduto(id: string): Promise<Produto> {
   };
 }
 
+function extrairCaminhoStorage(urlOuPath: string): string | null {
+  const marker = '/storage/v1/object/public/produtos/';
+  const idx = urlOuPath.indexOf(marker);
+  if (idx !== -1) {
+    return urlOuPath.substring(idx + marker.length);
+  }
+  const altMarker = '/produtos/';
+  const altIdx = urlOuPath.indexOf(altMarker);
+  if (altIdx !== -1 && urlOuPath.startsWith('http')) {
+    return urlOuPath.substring(altIdx + altMarker.length);
+  }
+  if (!urlOuPath.startsWith('http') && urlOuPath.includes('/')) {
+    return urlOuPath;
+  }
+  return null;
+}
+
+/**
+ * Atualiza campos de um produto existente no Supabase PostgreSQL
+ */
+export async function atualizarProduto(id: string, dados: Partial<Produto>): Promise<Produto> {
+  const updatePayload: Record<string, any> = {};
+
+  if (dados.nome !== undefined) updatePayload.nome = dados.nome.trim();
+  if (dados.condicao !== undefined) updatePayload.condicao = dados.condicao;
+  if (dados.categoria !== undefined) updatePayload.categoria = dados.categoria;
+  if (dados.preco_usuario !== undefined) updatePayload.preco_usuario = dados.preco_usuario;
+  if (dados.observacoes_usuario !== undefined) updatePayload.observacoes_usuario = dados.observacoes_usuario.trim();
+  if (dados.status !== undefined) updatePayload.status = dados.status;
+  if (dados.descricao_curta !== undefined) updatePayload.descricao_curta = dados.descricao_curta?.trim() || null;
+  if (dados.descricao_longa !== undefined) updatePayload.descricao_longa = dados.descricao_longa?.trim() || null;
+  if (dados.preco_medio_mercado !== undefined) updatePayload.preco_medio_mercado = dados.preco_medio_mercado;
+  if (dados.preco_sugerido !== undefined) updatePayload.preco_sugerido = dados.preco_sugerido;
+  if (dados.fotos !== undefined) updatePayload.fotos = dados.fotos;
+
+  const { data: row, error } = await supabase
+    .from('produtos')
+    .update(updatePayload)
+    .eq('id', id)
+    .select()
+    .single();
+
+  if (error || !row) {
+    throw new ApiException(error ? error.message : 'Falha ao atualizar produto');
+  }
+
+  return {
+    id: row.id,
+    created_at: row.created_at,
+    user_id: row.user_id,
+    nome: row.nome,
+    condicao: row.condicao,
+    categoria: row.categoria,
+    observacoes_usuario: row.observacoes_usuario || '',
+    preco_usuario: Number(row.preco_usuario),
+    fotos: row.fotos || [],
+    status: row.status,
+    descricao_curta: row.descricao_curta,
+    descricao_longa: row.descricao_longa,
+    preco_medio_mercado: row.preco_medio_mercado ? Number(row.preco_medio_mercado) : undefined,
+    preco_sugerido: row.preco_sugerido ? Number(row.preco_sugerido) : undefined,
+  };
+}
+
+/**
+ * Exclui um produto do banco de dados e remove suas fotos do Supabase Storage
+ */
+export async function removerProduto(id: string, fotos?: string[]): Promise<void> {
+  let fotosParaDeletar = fotos;
+
+  if (!fotosParaDeletar || fotosParaDeletar.length === 0) {
+    try {
+      const p = await obterProduto(id);
+      fotosParaDeletar = p.fotos;
+    } catch {
+      // Continua se o produto já não puder ser lido
+    }
+  }
+
+  const { error: dbError } = await supabase
+    .from('produtos')
+    .delete()
+    .eq('id', id);
+
+  if (dbError) {
+    throw new ApiException(`Erro ao remover produto: ${dbError.message}`);
+  }
+
+  if (fotosParaDeletar && fotosParaDeletar.length > 0) {
+    const filePaths = fotosParaDeletar
+      .map(extrairCaminhoStorage)
+      .filter((p): p is string => Boolean(p));
+
+    if (filePaths.length > 0) {
+      await supabase.storage.from('produtos').remove(filePaths).catch(() => {});
+    }
+  }
+}
+
+
 export interface TesteConexaoResult {
   success: boolean;
   status?: number;

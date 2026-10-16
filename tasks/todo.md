@@ -165,6 +165,30 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
   - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md`, `README.md` e `tasks/todo.md`.
   - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
 
+## Navegação Gestual, Edição Completa e IA sob Demanda
+
+- [x] **Task 32: Módulo Profundo de Edição e Exclusão (`src/lib/api.ts` e `useProductStore.ts`)**
+  - [x] Adicionar métodos `atualizarProduto(id, dados)` e `removerProduto(id, fotos)` em `src/lib/api.ts`.
+  - [x] Adicionar ações equivalentes no Zustand em `src/store/useProductStore.ts`.
+  - *Critério de Verificação:* `bun run typecheck` e `bun run lint`. (Concluído)
+
+- [x] **Task 33: Componente de Navegação Gestual por Deslize (`SwipeableTabScreen.tsx`)**
+  - [x] Criar container `src/components/SwipeableTabScreen.tsx` usando `Gesture.Pan()` com limites estritos de ativação.
+  - [x] Integrar o container em `src/app/(tabs)/captura.tsx`, `src/app/(tabs)/produtos.tsx` e `src/app/(tabs)/configuracao.tsx`.
+  - *Critério de Verificação:* Teste de navegação e ausência de conflitos com rolagem vertical. (Concluído)
+
+- [x] **Task 34: Tela Nativa de Detalhes, Edição Manual, IA sob Demanda e Exclusão (`src/app/produto/[id].tsx`)**
+  - [x] Criar rota dinâmica `src/app/produto/[id].tsx` com header temático e carrossel de fotos.
+  - [x] Implementar botão de ação "✨ Gerar Anúncio com IA" acionando `enriquecerProduto(id)` com loading reativo.
+  - [x] Implementar formulário de edição de título, preço, condição, categoria, observações e textos de IA.
+  - [x] Implementar botão de exclusão com alerta de confirmação e limpeza de storage.
+  - [x] Conectar clique no `ProductCard.tsx` para navegar até a nova tela de produto.
+  - *Critério de Verificação:* `bun run typecheck` e `bun run lint`. (Concluído)
+
+- [x] **Task 35: Sincronização Documental & Validação de Qualidade Final**
+  - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md`, `README.md` e `tasks/todo.md`.
+  - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
+
 ---
 
 ## Checkpoints de Validação
@@ -179,3 +203,5 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
 - [x] **Checkpoint 8 (Após Tasks 18 a 22):** Roadmap perene documentado, script de verificação RLS criado, reload de PostgREST padronizado e limpeza de logout offline blindada.
 - [x] **Checkpoint 9 (Após Tasks 23 a 26):** Gitignore blindado contra artefatos Supabase, RLS otimizado com (select auth.uid()) e Deep Linking mobile configurado.
 - [x] **Checkpoint 10 (Após Tasks 27 a 31):** Edge Function de IA Gemini 1.5 Flash-8B criada, módulo profundo no mobile acoplado e feedback visual integrado.
+- [x] **Checkpoint 11 (Após Tasks 32 a 35):** Navegação por swipe entre abas ativa, edição manual de produtos, enriquecimento de IA sob demanda e exclusão atômica operacionais.
+
