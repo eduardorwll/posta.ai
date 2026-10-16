@@ -26,6 +26,65 @@ export interface AuthState {
 
 let authSubscriptionCleanup: (() => void) | null = null;
 
+/**
+ * Tradutor e sanitizador defensivo de mensagens de erro de autenticação.
+ * Converte mensagens técnicas em inglês, erros de gateway e exceções de sintaxe
+ * em orientações amigáveis, claras e acionáveis em português.
+ */
+export function traduzirErroAuth(err: any): string {
+  if (!err) return 'Ocorreu um erro inesperado. Tente novamente.';
+
+  const rawMsg = typeof err === 'string' ? err : err?.message || err?.msg || err?.error_description || '';
+  const msg = rawMsg.toLowerCase();
+
+  if (
+    msg.includes('rate limit') ||
+    msg.includes('over_email_send_rate_limit') ||
+    msg.includes('too many requests')
+  ) {
+    return 'Limite de envio de e-mails atingido temporariamente no Supabase. Aguarde alguns minutos ou confirme o usuário pelo painel.';
+  }
+
+  if (msg.includes('email not confirmed') || msg.includes('email_not_confirmed')) {
+    return 'E-mail ainda não confirmado. Verifique sua caixa de entrada (ou spam) para ativar a conta antes de entrar.';
+  }
+
+  if (
+    msg.includes('invalid login credentials') ||
+    msg.includes('invalid credentials') ||
+    msg.includes('invalid_grant')
+  ) {
+    return 'E-mail ou senha incorretos. Verifique os dados digitados.';
+  }
+
+  if (
+    msg.includes('user already registered') ||
+    msg.includes('already exists') ||
+    msg.includes('email_exists')
+  ) {
+    return 'Este e-mail já está cadastrado. Toque em "Entrar" abaixo para acessar sua conta.';
+  }
+
+  if (msg.includes('password should be at least')) {
+    return 'A senha deve conter no mínimo 6 caracteres.';
+  }
+
+  if (
+    msg.includes('unexpected character') ||
+    msg.includes('json parse error') ||
+    msg.includes('syntaxerror') ||
+    msg.includes('gateway_error')
+  ) {
+    return 'Instabilidade temporária no servidor ou na conexão de rede. Verifique sua internet e tente novamente.';
+  }
+
+  if (msg.includes('network request failed') || msg.includes('failed to fetch')) {
+    return 'Falha de conexão com a internet. Verifique sua rede e tente novamente.';
+  }
+
+  return rawMsg || 'Falha na autenticação. Tente novamente.';
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   session: null,
@@ -92,8 +151,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
 
       if (error) {
-        set({ error: error.message, isLoading: false });
-        return { success: false, error: error.message };
+        const friendlyError = traduzirErroAuth(error);
+        set({ error: friendlyError, isLoading: false });
+        return { success: false, error: friendlyError };
       }
 
       set({
@@ -105,7 +165,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       return { success: true };
     } catch (err: any) {
-      const msg = err?.message || 'Falha ao autenticar. Tente novamente.';
+      const msg = traduzirErroAuth(err);
       set({ error: msg, isLoading: false });
       return { success: false, error: msg };
     }
@@ -132,8 +192,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       });
 
       if (error) {
-        set({ error: error.message, isLoading: false });
-        return { success: false, error: error.message };
+        const friendlyError = traduzirErroAuth(error);
+        set({ error: friendlyError, isLoading: false });
+        return { success: false, error: friendlyError };
       }
 
       // Se a confirmação de e-mail estiver ativa no projeto Supabase, data.session virá nula
@@ -151,7 +212,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         requiresEmailConfirmation,
       };
     } catch (err: any) {
-      const msg = err?.message || 'Falha ao criar conta. Tente novamente.';
+      const msg = traduzirErroAuth(err);
       set({ error: msg, isLoading: false });
       return { success: false, error: msg };
     }
@@ -213,8 +274,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           });
 
           if (error) {
-            set({ error: error.message, isLoading: false });
-            return { success: false, error: error.message };
+            const friendlyError = traduzirErroAuth(error);
+            set({ error: friendlyError, isLoading: false });
+            return { success: false, error: friendlyError };
           }
 
           set({
@@ -233,8 +295,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (typeof code === 'string') {
         const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         if (error) {
-          set({ error: error.message, isLoading: false });
-          return { success: false, error: error.message };
+          const friendlyError = traduzirErroAuth(error);
+          set({ error: friendlyError, isLoading: false });
+          return { success: false, error: friendlyError };
         }
 
         set({
@@ -255,8 +318,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         });
 
         if (error) {
-          set({ error: error.message, isLoading: false });
-          return { success: false, error: error.message };
+          const friendlyError = traduzirErroAuth(error);
+          set({ error: friendlyError, isLoading: false });
+          return { success: false, error: friendlyError };
         }
 
         set({
@@ -271,7 +335,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: false });
       return { success: false };
     } catch (err: any) {
-      const msg = err?.message || 'Falha ao processar link de autenticação.';
+      const msg = traduzirErroAuth(err);
       set({ error: msg, isLoading: false });
       return { success: false, error: msg };
     }

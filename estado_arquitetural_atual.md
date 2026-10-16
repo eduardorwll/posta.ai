@@ -122,8 +122,8 @@ postaaiapp/
     ├── lib/
     │   ├── api.ts            # Módulo profundo (Storage CDN + PostgREST + atualizarProduto + removerProduto + enriquecerProdutoComIa)
     │   ├── haptics.ts        # Módulo profundo de feedback tátil físico
-    │   └── supabase.ts       # Cliente Supabase singleton com AsyncStorage e checagem defensiva
-    ├── store/useAuthStore.ts # Store Zustand de autenticação com onAuthStateChange e persistência no AsyncStorage
+    │   └── supabase.ts       # Cliente Supabase singleton com customFetch defensivo (anti-HTML/502) e AsyncStorage
+    ├── store/useAuthStore.ts # Store Zustand de autenticação com sanitizador traduzirErroAuth e persistência
     ├── store/useDraftStore.ts # Store de rascunho com persistência em AsyncStorage para resiliência no Android
     ├── store/useThemeStore.ts # Store de tema com persistência em expo-secure-store
     ├── store/useProductStore.ts # Store de produtos com ações assíncronas (cadastrar, atualizar, remover, enriquecer)
@@ -159,6 +159,10 @@ postaaiapp/
    - Implementado na Supabase Edge Function (`supabase/functions/enriquecer-produto/index.ts`) em Deno runtime com **`gemini-3.5-flash-lite`** do Google AI Studio.
    - **Rate Limiter Global no PostgreSQL:** Função atômica `consumir_quota_ia(5)` com `SELECT ... FOR UPDATE` limita o teto global de chamadas a 5 requisições por minuto somadas em todo o sistema.
    - **Hardening contra DoS & Sequestro de Namespace:** Função declarada com `SET search_path = public` e execução revogada para roles públicas (`anon` e `authenticated`). Apenas a `service_role` (Edge Functions) possui autorização de execução, impedindo ataques volumétricos externos via REST PostgREST.
+7. **Blindagem de Rede e Resiliência de Gateway no Supabase Client:**
+   - Middleware `customFetch` intercepta respostas HTTP com falha (`!response.ok`) retornadas como HTML (erros Cloudflare 502/503/504 ou portais cativos) e as converte em JSON sintético estruturado.
+   - Elimina o crash do motor Hermes (`JSON Parse error: Unexpected character: <`).
+   - A função `traduzirErroAuth` em `src/store/useAuthStore.ts` centraliza a tradução de limites de taxa de e-mail, confirmações pendentes, credenciais inválidas e falhas de conexão para mensagens amigáveis em português.
 
 ---
 

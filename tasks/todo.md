@@ -261,6 +261,28 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
   - [ ] Atualizar `ROADMAP.md`, `tasks/todo.md`, `estado_atual.md` e `estado_arquitetural_atual.md`.
   - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados.
 
+## Blindagem de Rede e Tratamento de Erros de Autenticação
+
+- [x] **Task 50: Implementação de Middleware `customFetch` Defensivo em `src/lib/supabase.ts`**
+  - [x] Interceptar respostas com status de erro (`!response.ok`) e conteúdo HTML (`text/html` ou começando com `<`).
+  - [x] Converter páginas de erro de gateway (Cloudflare 502/503/429) em payload JSON estruturado, eliminando o erro fatal `JSON Parse error: Unexpected character: <`.
+  - [x] Configurar `global: { fetch: customFetch }` no cliente oficial do Supabase.
+  - *Critério de Verificação:* Simulação com bun de resposta HTML convertida para JSON sintético sem crash de sintaxe. (Concluído)
+
+- [x] **Task 51: Centralização de Tradução de Erros em `src/store/useAuthStore.ts`**
+  - [x] Criar função utilitária `traduzirErroAuth(err: any): string`.
+  - [x] Mapear mensagens do Supabase: rate limit de e-mail, confirmação pendente, credenciais inválidas, e-mail já cadastrado, senhas curtas e falhas de rede.
+  - [x] Aplicar `traduzirErroAuth` em `signInWithEmail`, `signUpWithEmail` e `handleDeepLink`.
+  - *Critério de Verificação:* `bun run typecheck` com 0 erros. (Concluído)
+
+- [x] **Task 52: Refinamento de Integração nas Telas (`src/app/(auth)/...`)**
+  - [x] Conferir integração das mensagens traduzidas nos banners de erro de `cadastro.tsx` e `login.tsx`.
+  - *Critério de Verificação:* `bun run lint` com 0 erros. (Concluído)
+
+- [x] **Task 53: Sincronização Documental e Validação de Qualidade Final**
+  - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md` e `tasks/todo.md`.
+  - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
+
 ---
 
 ## Checkpoints de Validação
@@ -280,6 +302,7 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
 - [x] **Checkpoint 13 (Após Tasks 38 a 40):** Animação de slide contínuo horizontal entre abas ativa via Native Driver com interpolação dinâmica de translateX e calibração fina de gestos.
 - [x] **Checkpoint 14 (Após Tasks 41 a 43):** Hardening de segurança implementado contra avisos do Supabase Advisor (DoS em quota de IA neutralizado, listagem pública no storage fechada, search_path fixado).
 - [ ] **Checkpoint 15 (Após Tasks 44 a 49):** Motor de precificação C2C ativo via Gemini 3.5 Flash-Lite com cálculo determinístico de depreciação, régua de mercado e adoção rápida no mobile.
+- [x] **Checkpoint 16 (Após Tasks 50 a 53):** Blindagem do cliente Supabase com middleware customFetch contra respostas HTML e tradução humanizada de erros de autenticação (eliminação de JSON Parse error).
 
 
 

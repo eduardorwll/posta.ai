@@ -36,6 +36,9 @@
     - Revogação defensiva de execução pública da função utilitária `rls_auto_enable`.
   - Edge Function `enriquecer-produto` configurada com `gemini-3.5-flash-lite`.
   - Cliente oficial `@supabase/supabase-js` em `src/lib/supabase.ts` com persistência de sessão assíncrona no `@react-native-async-storage/async-storage`.
+  - **Blindagem de Rede & Resiliência de Autenticação:**
+    - Middleware `customFetch` defensivo em `src/lib/supabase.ts` interceptando respostas HTML de gateway (Cloudflare 502/503/429, portais cativos ou proxies) e convertendo-as em JSON sintético, eliminando o erro fatal `JSON Parse error: Unexpected character: <` no motor Hermes.
+    - Sanitizador centralizado `traduzirErroAuth` em `src/store/useAuthStore.ts` com mensagens amigáveis em português para limites de envio de e-mails, contas não confirmadas, credenciais incorretas e falhas de conexão.
 
 ---
 
