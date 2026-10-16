@@ -26,9 +26,7 @@ type StatusMetadata = {
 };
 
 function resolveStatusMetadata(status: string, palette: ReturnType<typeof useAppTheme>['palette']): StatusMetadata {
-  const normalized = status === 'processando_ia' ? 'em_processamento' : status;
-
-  switch (normalized) {
+  switch (status) {
     case 'pendente':
       return {
         label: 'Pendente',
@@ -36,9 +34,10 @@ function resolveStatusMetadata(status: string, palette: ReturnType<typeof useApp
         bgColor: palette.warning,
         textColor: palette.onHighlight,
       };
+    case 'processando_ia':
     case 'em_processamento':
       return {
-        label: 'Processando IA',
+        label: 'Gerando com IA...',
         icon: Loading03Icon,
         bgColor: '#0284c7',
         textColor: '#ffffff',
@@ -48,6 +47,13 @@ function resolveStatusMetadata(status: string, palette: ReturnType<typeof useApp
         label: 'Anúncio Pronto',
         icon: CheckmarkCircle02Icon,
         bgColor: palette.success,
+        textColor: '#ffffff',
+      };
+    case 'erro':
+      return {
+        label: 'Erro IA',
+        icon: Alert02Icon,
+        bgColor: palette.tertiary,
         textColor: '#ffffff',
       };
     default:
@@ -167,6 +173,22 @@ export function ProductCard({
                 .filter(Boolean)
                 .join(' • ')}
             </RNText>
+
+            {/* Destaque Comercial gerado pela IA */}
+            {produto.descricao_curta ? (
+              <RNText
+                numberOfLines={1}
+                style={{
+                  color: palette.paragraph,
+                  fontSize: 11,
+                  fontStyle: 'italic',
+                  lineHeight: 15,
+                  marginTop: 2,
+                  includeFontPadding: false,
+                }}>
+                ✨ {produto.descricao_curta}
+              </RNText>
+            ) : null}
           </View>
 
           {/* Linha Inferior: Preço e Observações */}

@@ -64,10 +64,11 @@ export default function ProdutosScreen() {
 
     return produtos.filter((p) => {
       const matchName = p.nome?.toLowerCase().includes(query);
+      const matchDesc = p.descricao_curta?.toLowerCase().includes(query);
       const matchNotes = p.observacoes_usuario?.toLowerCase().includes(query);
       const matchCategory = CATEGORY_LABELS[p.categoria]?.toLowerCase().includes(query);
       const matchCondition = CONDITION_LABELS[p.condicao]?.toLowerCase().includes(query);
-      return matchName || matchNotes || matchCategory || matchCondition;
+      return matchName || matchDesc || matchNotes || matchCategory || matchCondition;
     });
   }, [produtos, searchQuery]);
 

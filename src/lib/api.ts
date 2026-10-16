@@ -340,3 +340,64 @@ export async function testarConexaoApi(): Promise<TesteConexaoResult> {
     };
   }
 }
+
+export interface EnriquecimentoIaResult {
+  success: boolean;
+  produto_id?: string;
+  resultado?: {
+    nome: string;
+    descricao_curta: string;
+    descricao_longa: string;
+    categoria?: string;
+    condicao_sugerida?: string;
+    tags?: string[];
+  };
+  error?: string;
+}
+
+/**
+ * Aciona o pipeline serverless de IA multimodal (Gemini 1.5 Flash-8B)
+ * para gerar título comercial, descrição curta e descrição rica para marketplaces.
+ */
+export async function enriquecerProdutoComIa(produtoId: string): Promise<EnriquecimentoIaResult> {
+  if (!isSupabaseConfigured) {
+    return {
+      success: false,
+      error: 'Supabase não está configurado.',
+    };
+  }
+
+  try {
+    const { data, error } = await supabase.functions.invoke('enriquecer-produto', {
+      body: { produto_id: produtoId },
+    });
+
+    if (error) {
+      console.warn('[enriquecerProdutoComIa] Erro ao invocar Edge Function:', error.message);
+      return {
+        success: false,
+        error: error.message || 'Falha ao processar anúncio com IA.',
+      };
+    }
+
+    if (data?.error) {
+      return {
+        success: false,
+        error: data.error,
+      };
+    }
+
+    return {
+      success: true,
+      produto_id: data.produto_id,
+      resultado: data.resultado,
+    };
+  } catch (err: any) {
+    console.warn('[enriquecerProdutoComIa] Exceção na chamada de IA:', err);
+    return {
+      success: false,
+      error: err?.message || 'Falha de comunicação com o servidor de IA.',
+    };
+  }
+}
+

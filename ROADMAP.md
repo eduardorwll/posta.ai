@@ -39,27 +39,31 @@ flowchart LR
 
 ---
 
-## 🧠 Etapa 2: Fase 4A — Pipeline de IA Multimodal (Google Gemini Flash)
+## 🧠 Etapa 2: Fase 4A — Pipeline de IA Multimodal de Custo Mínimo (Google Gemini 1.5 Flash-8B)
 
-> **Status:** Planejada | **Dependência:** Etapa 1
+> **Status:** Em Execução | **Dependência:** Etapa 1 (Concluída)
 
 ### Objetivos
-- Converter fotos e observações sucintas digitadas pelo vendedor em títulos atraentes e descrições ricas em SEO para marketplaces.
-- Operar via arquitetura serverless de baixo custo utilizando **Google Gemini 2.5 / 1.5 Flash**.
+- Converter fotos e observações sucintas digitadas pelo vendedor em títulos comerciais atraentes e descrições ricas em SEO para marketplaces (Enjoei, OLX, Mercado Livre, Facebook Marketplace).
+- **Custo Mínimo / Zero:** Operar primariamente sob o **Free Tier do Google AI Studio** (15 RPM / 1.500 produtos/dia sem custo — $0,00) utilizando **Google Gemini 1.5 Flash-8B** (custo pay-as-you-go de $0.0375/1M tokens de entrada e $0.15/1M de saída, equivalente a ~R$ 0,0008 por anúncio). Suporte plugável a **Gemini 2.0 Flash-Lite**.
 
 ### Entregáveis Técnicos
-1. **Orquestrador Serverless (Supabase Edge Function):**
-   - Trigger ou endpoint seguro acionado após o cadastro do produto.
-   - Leitura das fotos no Storage CDN (`{user_id}/{produto_id}/foto_*.jpg`).
-   - Prompt de Visão Computacional extraindo atributos físicos (cor, tecido/material, estilo, estado de conservação visível e marca).
-   - Retorno estruturado em JSON Schema:
+1. **Orquestrador Serverless Seguro (Supabase Edge Function `enriquecer-produto`):**
+   - Endpoint seguro autenticado via JWT do Supabase (`Authorization: Bearer <token>`), garantindo que apenas o vendedor proprietário do item dispare a IA.
+   - A `GEMINI_API_KEY` fica armazenada em *Secrets* da Supabase Function, nunca exposta no app mobile.
+   - Leitura das fotos no Storage CDN público (`{user_id}/{produto_id}/foto_*.jpg`).
+   - Prompt de Visão Computacional ultra-econômico (imagens em dimensão padrão consumindo exatamente 258 tokens por foto).
+   - Retorno estruturado forçado via `response_schema` e `response_mime_type: "application/json"`:
      - `nome`: Título comercial objetivo e de alto clique (máx 60 caracteres).
      - `descricao_curta`: Destaques em tópicos para redes sociais e previews de busca.
      - `descricao_longa`: Copywriting completo de vendas com sugestão de medidas, estado e gatilhos de decisão.
+     - `categoria`: Sugestão de categoria padronizada.
+     - `tags`: Palavras-chave relevantes para busca em marketplaces.
 2. **Transição de Ciclo de Vida do Produto:**
-   - `status`: `'pendente'` ➔ `'processando_ia'` ➔ `'aguardando_aprovacao'`.
-3. **Feedback em Tempo Real no App:**
-   - Atualização reativa do card do produto com indicador de progresso e badge de status dinâmico.
+   - `status`: `'pendente'` ➔ `'processando_ia'` ➔ `'pronto'` (ou `'erro'` em caso de indisponibilidade).
+3. **Módulo Profundo & Feedback Visual no Mobile:**
+   - Método `enriquecerProdutoComIa(produtoId)` em `src/lib/api.ts` com isolamento completo de complexidade.
+   - Atualização do card do produto com indicador de progresso e exibição dos textos gerados pela IA.
 
 ---
 

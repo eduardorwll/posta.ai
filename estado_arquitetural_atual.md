@@ -87,6 +87,9 @@ posta-ai-app/
 │   ├── config.toml           # Configuração canônica da Supabase CLI para CI/CD
 │   ├── schema.sql            # Script SQL canônico consolidado (tabelas, enums, storage, RLS e multi-usuário)
 │   ├── verify_isolation.sql  # Script canônico de teste e validação adversarial de RLS
+│   ├── functions/            # Supabase Edge Functions (Deno / Serverless)
+│   │   └── enriquecer-produto/ # Pipeline multimodal de IA (Gemini 1.5 Flash-8B com JSON Schema estrito)
+│   │       └── index.ts
 │   └── migrations/           # Migrações versionadas para deploys rastreáveis
 │       ├── 20261015000000_init_schema.sql     # Migração base inicial
 │       └── 20261015000001_multi_user_auth.sql # Adição de user_id, índice composto e isolamento RLS
@@ -101,19 +104,19 @@ posta-ai-app/
     │   │   └── cadastro.tsx  # Tela de criação de conta com instruções amigáveis de confirmação por e-mail
     │   └── (tabs)/
     │       ├── _layout.tsx   # Tabs com palette dinâmica e Hugeicons
-    │       ├── captura.tsx   # Tela de cadastro (fotos + validações inline + envio real isolado)
+    │       ├── captura.tsx   # Tela de cadastro (fotos + validações inline + envio real isolado + disparo assíncrono de IA)
     │       ├── produtos.tsx  # Catálogo com busca em tempo real + skeleton loader + pull-to-refresh
     │       └── configuracao.tsx # Menu de preferências (Perfil do vendedor, Logout, Aparência, IA, Monitor Supabase)
     ├── components/           # AppHeader (RNText), CameraModal (câmera in-app CameraView), ChipSelector, PhotoGrid, ProductCard
     ├── constants/theme.ts    # Palettes, tokens semânticos e useAppTheme()
     ├── lib/
-    │   ├── api.ts            # Módulo profundo de produtos (Storage isolado {user_id}/{produto_id}/... + PostgREST + rollback)
+    │   ├── api.ts            # Módulo profundo de produtos (Storage CDN + PostgREST + Edge Function enriquecerProdutoComIa)
     │   ├── haptics.ts        # Módulo profundo de feedback tátil físico
     │   └── supabase.ts       # Cliente Supabase singleton com AsyncStorage e checagem defensiva
     ├── store/useAuthStore.ts # Store Zustand de autenticação com onAuthStateChange e persistência no AsyncStorage
     ├── store/useDraftStore.ts # Store de rascunho com persistência em AsyncStorage para resiliência no Android
     ├── store/useThemeStore.ts # Store de tema com persistência em expo-secure-store
-    ├── store/useProductStore.ts # Store de produtos com ações assíncronas
+    ├── store/useProductStore.ts # Store de produtos com ações assíncronas e ação reativa enriquecerProduto
     └── types/product.ts      # Contratos canônicos de produtos e enums (com user_id)
 ```
 
@@ -122,8 +125,8 @@ posta-ai-app/
 ## 3. Padrões de Arquitetura Serverless & Multi-Usuário
 
 1. **Módulo Profundo de API (`src/lib/api.ts`):**
-   - Preserva uma interface pública simples e estável: `cadastrarProduto(dados, fotos)`, `obterProdutos()`, `obterProduto(id)` e `testarConexaoApi()`.
-   - As telas e stores consomem esses métodos sem conhecer os detalhes internos do Supabase.
+   - Preserva uma interface pública simples e estável: `cadastrarProduto(dados, fotos)`, `obterProdutos()`, `obterProduto(id)`, `enriquecerProdutoComIa(produtoId)` e `testarConexaoApi()`.
+   - As telas e stores consomem esses métodos sem conhecer os detalhes internos do Supabase ou do Google Gemini.
    - **Checagem Defensiva de Sessão:** Valida `supabase.auth.getUser()` antes de processar qualquer imagem ou iniciar uploads, abortando precocemente em caso de token expirado e poupando banda do plano de dados móvel do vendedor.
 2. **Pipeline Nativo de Upload com Isolamento por Vendedor:**
    - Otimização e downsampling fora da heap JavaScript com `expo-image-manipulator` (limite de 1920px Full HD e compressão JPEG 0.85).
@@ -143,10 +146,15 @@ posta-ai-app/
    - **Deep Linking Nativo (`postaaiapp://`):** Integração com `expo-linking` (`useLinkingURL()`, `createURL('/')` e `parse()`). Em [`useAuthStore.handleDeepLink`](file:///home/eduardorwll/Projects/posta-ai-app/src/store/useAuthStore.ts), suporta fluxos implícitos (`#access_token=...`), fluxo PKCE (`?code=...`) e verificação OTP (`?token_hash=...`), eliminando falhas de redirecionamento para `localhost`.
    - Prevenção de flicker visual na inicialização via controle explícito de `SplashScreen.preventAutoHideAsync()` e `SplashScreen.hideAsync()`.
    - Preferências de tema persistidas com segurança no `expo-secure-store`.
+5. **Pipeline de IA Multimodal Serverless de Custo Mínimo (`enriquecer-produto`):**
+   - Implementado na Supabase Edge Function (`supabase/functions/enriquecer-produto/index.ts`) em Deno runtime.
+   - **Custo Mínimo Teórico:** Utiliza **Google Gemini 1.5 Flash-8B** no Free Tier ($0,00 até 1.500 produtos/dia) com fallback para Pay-as-you-go ($0.0375/1M input). Cada imagem consome exatamente 258 tokens no Gemini, resultando em menos de R$ 0,0008 por anúncio processado.
+   - **Structured Outputs (Strict JSON):** Força retorno estrito em JSON Schema com `nome` (máx 60 caracteres), `descricao_curta`, `descricao_longa`, `categoria` e `tags`, eliminando tokens conversacionais redundantes.
+   - **Segurança de Segredos:** A `GEMINI_API_KEY` reside exclusivamente nos Secrets do Supabase (`supabase secrets set GEMINI_API_KEY=...`), sem risco de vazamento no código do app.
 
 ---
 
 ## 4. Próximos Passos
 
-- **Validação de Fluxo E2E no Dispositivo:** Cadastrar produto completo a partir do dispositivo móvel com foto da câmera em alta qualidade e verificar atualização em tempo real no catálogo.
-- **Fase 4 — Enriquecimento com IA:** Integração com modelos multimodais para geração de título atraente, descrição curta, descrição longa para marketplace, estimativa de preço de mercado e sugestão de preço.
+- **Deploy da Edge Function e Configuração de Chave:** `supabase functions deploy enriquecer-produto` e definição do segredo no Supabase.
+- **Etapa 3 — Motor de Precificação e Inteligência de Mercado:** Implementação de algoritmo de benchmark de preços e cálculo de preço sugerido para vendedores C2C.

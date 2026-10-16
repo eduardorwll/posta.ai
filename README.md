@@ -6,7 +6,7 @@ Hub de vendas multiplataforma C2C para catalogação e publicação de produtos 
 
 Consulte o documento mestre [`ROADMAP.md`](file:///home/eduardorwll/Projects/posta-ai-app/ROADMAP.md) para detalhes completos sobre o planejamento das 5 etapas de arquitetura:
 1. **Etapa 1:** Blindagem de Isolamento Local & Verificação RLS (Concluída)
-2. **Etapa 2:** Pipeline de IA Multimodal (Google Gemini Flash)
+2. **Etapa 2:** Pipeline de IA Multimodal de Custo Mínimo — Google Gemini 1.5 Flash-8B (Concluída)
 3. **Etapa 3:** Motor de Precificação e Inteligência de Mercado
 4. **Etapa 4:** Human-in-the-Loop & Revisão de Anúncios
 5. **Etapa 5:** Publicação Multicanal via RPA (Playwright Stealth)
@@ -15,13 +15,14 @@ Consulte o documento mestre [`ROADMAP.md`](file:///home/eduardorwll/Projects/pos
 
 ## ⚡ Features
 
+* **Pipeline de IA Multimodal Serverless de Custo Mínimo:** Edge Function Deno (`supabase/functions/enriquecer-produto/`) que processa fotos e dados do vendedor com **Google Gemini 1.5 Flash-8B** no Free Tier ($0,00 até 1.500 produtos/dia ou ~R$ 0,0008 por anúncio). Gera título comercial de alto impacto, descrição curta em tópicos e copywriting completo formatado em JSON estrito.
 * **Autenticação Multi-Usuário & Deep Linking Mobile:** Fluxo nativo completo de autenticação (`Login`, `Cadastro` e `Logout` seguro) com suporte a Deep Linking (`postaaiapp://`) para confirmação de e-mail e recuperação de senha. Gerenciado com store Zustand persistente (`useAuthStore`) e guarda de navegação no Expo Router com prevenção de flicker via Splash Screen.
 * **Isolamento Estrito por Vendedor (RLS Otimizado & Storage):** Cada vendedor tem acesso exclusivo aos seus próprios produtos no PostgREST com subqueries de alta performance `(select auth.uid()) = user_id`. Fotos armazenadas em caminhos isolados no Storage CDN (`{user_id}/{produto_id}/foto_{index}.jpg`) com políticas RLS no bucket `produtos`.
 * **Purga Atômica de Cache e Memória no Logout:** Encerramento de sessão com limpeza imediata de produtos e rascunhos no `useProductStore` e `useDraftStore`, imune a quedas de rede.
 * **Câmera In-App & Galeria com Pipeline Nativo:** Captura in-app (`CameraModal` com obturador silencioso e `quality: 0.85`) e seleção na galeria com downsampling e otimização nativos em C++/Java (`expo-image-manipulator`, máx 1920px Full HD e JPEG 0.85), blindando o dispositivo contra Out Of Memory (OOM).
 * **Formulário de Catalogação com Rascunho Persistente:** Cadastro completo (nome, condição, categoria, valor BRL e observações) com persistência automática no AsyncStorage (`useDraftStore`) imune a quedas de rede e reinício de processos no Android.
 * **Backend Serverless no Supabase Cloud:** Integração direta com Supabase Storage CDN (bucket `produtos`) e PostgREST, com checagem defensiva de sessão e rollback atômico de imagens em caso de erro na gravação.
-* **Catálogo em Cards:** Listagem dos produtos cadastrados do vendedor autenticado, com miniatura da foto, título, tags contextuais (`Condição • Categoria`), preço formatado em destaque e badge de status dinâmico (`pendente`, `processando_ia`, `pronto`, etc.).
+* **Catálogo em Cards com IA em Tempo Real:** Listagem dos produtos cadastrados do vendedor autenticado, com miniatura da foto, título comercial, tags contextuais, destaque da IA (`✨ descricao_curta`), preço formatado e badge dinâmico (`pendente`, `processando_ia`, `pronto`).
 * **Navegação e Interface:** Navegação por abas com Expo Router (Capturar, Meus Produtos e Configurações com perfil do vendedor), Gluestack UI v5, NativeWind v5, feedback físico tátil (`expo-haptics`) e suporte dinâmico aos temas Claro, Escuro e Automático.
 * **Governança CI/CD e Migrações Versionadas:** Padrão canônico da Supabase CLI com `supabase/config.toml`, migrações versionadas em `supabase/migrations/` e script de teste adversarial em `supabase/verify_isolation.sql`.
 
@@ -36,7 +37,12 @@ Consulte o documento mestre [`ROADMAP.md`](file:///home/eduardorwll/Projects/pos
 5. Em **Authentication -> URL Configuration** no painel do Supabase:
    - **Site URL:** Configure como `postaaiapp://` (ou a URL do seu domínio).
    - **Redirect URLs:** Adicione `postaaiapp://*` (e `exp://*` caso esteja testando via Expo Go).
-6. Crie o arquivo `.env` na raiz do projeto (baseado em `.env.example`):
+6. Configure a chave do Google AI Studio e faça o deploy da Edge Function:
+   ```bash
+   supabase secrets set GEMINI_API_KEY=sua-chave-do-google-ai-studio
+   supabase functions deploy enriquecer-produto
+   ```
+7. Crie o arquivo `.env` na raiz do projeto (baseado em `.env.example`):
 
 ```bash
 EXPO_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co

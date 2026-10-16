@@ -60,7 +60,7 @@ function parsePrice(raw: string): number {
  */
 export default function CapturaScreen() {
   const insets = useSafeAreaInsets();
-  const { cadastrarProduto, isLoading, clearError } = useProductStore();
+  const { cadastrarProduto, enriquecerProduto, isLoading, clearError } = useProductStore();
   const { palette } = useAppTheme();
 
   const {
@@ -199,7 +199,7 @@ export default function CapturaScreen() {
 
     try {
       haptic.light();
-      await cadastrarProduto({
+      const novoProduto = await cadastrarProduto({
         nome: trimmedName,
         condicao,
         categoria,
@@ -209,9 +209,19 @@ export default function CapturaScreen() {
       });
 
       haptic.success();
-      Alert.alert('Sucesso!', 'Produto cadastrado com sucesso no catálogo.', [
-        { text: 'OK', onPress: resetForm },
-      ]);
+
+      // Dispara o enriquecimento de IA assincronamente em segundo plano
+      if (novoProduto?.id) {
+        enriquecerProduto(novoProduto.id).catch((err) => {
+          console.warn('[captura] Enriquecimento IA em segundo plano falhou:', err);
+        });
+      }
+
+      Alert.alert(
+        'Produto Cadastrado!',
+        'Seu item foi salvo no catálogo e a IA já está gerando título comercial e descrição rica.',
+        [{ text: 'OK', onPress: resetForm }]
+      );
     } catch (e: any) {
       haptic.error();
       let message = e?.detail || e?.message;

@@ -138,6 +138,33 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
   - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md`, `README.md` e `tasks/todo.md`.
   - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
 
+## Etapa 2: Pipeline de IA Multimodal de Custo Mínimo (Gemini 1.5 Flash-8B)
+
+- [x] **Task 27: Atualização do ROADMAP.md com a Arquitetura de Custo Mínimo**
+  - [x] Atualizar Etapa 2 em `ROADMAP.md` especificando `gemini-1.5-flash-8b` / `gemini-2.0-flash-lite`, Free Tier e métricas de custo.
+  - *Critério de Verificação:* Documento sincronizado e consistente. (Concluído)
+
+- [x] **Task 28: Criação da Supabase Edge Function (`enriquecer-produto`)**
+  - [x] Criar estrutura `supabase/functions/enriquecer-produto/index.ts` em Deno/TypeScript.
+  - [x] Implementar verificação de autenticação JWT do vendedor proprietário do produto.
+  - [x] Implementar chamada REST ao Google Gemini com `response_schema` estrito (título comercial, descrição curta, descrição longa, categoria e tags).
+  - [x] Atualizar registro na tabela `produtos` (`nome`, `descricao_curta`, `descricao_longa`, `status`).
+  - *Critério de Verificação:* Validação de sintaxe Deno/TypeScript e contratos JSON. (Concluído)
+
+- [x] **Task 29: Extensão do Módulo Profundo de API no Mobile (`src/lib/api.ts`)**
+  - [x] Adicionar método `enriquecerProdutoComIa(produtoId: string)` consumindo a Edge Function via `supabase.functions.invoke`.
+  - [x] Adicionar salvaguardas para rede offline ou indisponibilidade da IA.
+  - *Critério de Verificação:* `bun run typecheck` e `bun run lint`. (Concluído)
+
+- [x] **Task 30: Ajustes no Catálogo e Feedback Visual no Mobile**
+  - [x] Atualizar `src/app/(tabs)/captura.tsx` para acionar opcionalmente ou automaticamente a IA após o envio bem-sucedido.
+  - [x] Atualizar `src/components/ProductCard.tsx` e `src/app/(tabs)/produtos.tsx` para exibir badges animados e textos gerados pela IA.
+  - *Critério de Verificação:* `bun run typecheck` e `bun run lint`. (Concluído)
+
+- [x] **Task 31: Sincronização Documental & Validação de Qualidade Final**
+  - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md`, `README.md` e `tasks/todo.md`.
+  - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
+
 ---
 
 ## Checkpoints de Validação
@@ -151,3 +178,4 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
 - [x] **Checkpoint 7 (Após Tasks 15, 16 e 17):** Storage e PostgREST isolados por vendedor, gestão de perfil em configurações e suíte de linters/typecheck 100% verde.
 - [x] **Checkpoint 8 (Após Tasks 18 a 22):** Roadmap perene documentado, script de verificação RLS criado, reload de PostgREST padronizado e limpeza de logout offline blindada.
 - [x] **Checkpoint 9 (Após Tasks 23 a 26):** Gitignore blindado contra artefatos Supabase, RLS otimizado com (select auth.uid()) e Deep Linking mobile configurado.
+- [x] **Checkpoint 10 (Após Tasks 27 a 31):** Edge Function de IA Gemini 1.5 Flash-8B criada, módulo profundo no mobile acoplado e feedback visual integrado.
