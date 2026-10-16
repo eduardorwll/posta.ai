@@ -75,39 +75,53 @@ flowchart LR
 
 ## 💰 Etapa 3: Fase 4B — Motor de Precificação e Inteligência de Mercado
 
-> **Status:** Planejada | **Dependência:** Etapa 2
+> **Status:** Pronta para Início | **Dependência:** Etapa 2 (Concluída)
 
 ### Objetivos
-- Ajudar o vendedor pessoa física a precificar competitivamente, evitando anunciar por valores que demorem meses para vender ou abaixo do mercado.
+- Ajudar o vendedor pessoa física a precificar competitivamente, evitando anunciar por valores que demorem meses para vender ou que fiquem muito abaixo da cotação real.
+- **Arquitetura Híbrida de Custo Zero ($0,00):** Inferência de mercado C2C brasileiro (Enjoei, Mercado Livre, OLX, Shopee) executada dentro do mesmo pipeline multimodal do **Google Gemini 3.5 Flash-Lite**, sem dependência de serviços externos pagos de scraping.
+- **Cálculo Determinístico no Backend:** Sanitização defensiva e aplicação matemática da taxa de depreciação por condição sem alucinações de LLM.
 
 ### Entregáveis Técnicos
-1. **Algoritmo de Benchmark de Preços:**
-   - Consulta a listagens de itens equivalentes e raspagem estruturada (Enjoei, Mercado Livre, OLX).
-   - Eliminação estatística de outliers (produtos falsos ou acessórios incompatíveis).
-2. **Cálculo de Preço Ponderado:**
-   - Ponderação com base na condição do item (`novo`, `como_novo`, `seminovo`, `usado`).
-   - Preenchimento de `preco_medio_mercado` e `preco_sugerido`.
-3. **Componente de Comparação Visual no App:**
-   - Indicador visual mostrando a diferença percentual entre o valor desejado pelo usuário (`preco_usuario`) e o preço médio do mercado.
+1. **Inteligência de Mercado na Edge Function (`enriquecer-produto`):**
+   - Expansão do `responseSchema` com:
+     - `preco_medio_mercado`: Média estimada de mercado para o item equivalente.
+     - `preco_minimo_mercado`: Menor valor de venda encontrado em marketplaces.
+     - `preco_maximo_mercado`: Maior valor para o item em estado impecável.
+     - `justificativa_preco`: Resumo sucinto do referencial comparativo de mercado.
+2. **Algoritmo Determinístico de Depreciação por Condição:**
+   - Aplicação dos fatores de ajuste conforme a condição real do item:
+     - `novo`: 95% do preço médio de mercado
+     - `como_novo`: 85% do preço médio de mercado
+     - `seminovo`: 70% do preço médio de mercado
+     - `usado`: 55% do preço médio de mercado
+   - Arredondamento para valores comerciais amigáveis e gravação atômica em `preco_medio_mercado` e `preco_sugerido`.
+3. **Componente Nativo `MarketPriceGauge.tsx` no Mobile:**
+   - Régua visual de mercado com zonas de competitividade (*Super Competitivo*, *Preço Justo*, *Acima da Média*).
+   - Botão interativo de 1 toque: *"Adotar Preço Sugerido (R$ X,XX)"* com microinteração e feedback háptico (`expo-haptics`).
+4. **Integração no Catálogo e Edição:**
+   - Exibição do `MarketPriceGauge` reativo na tela de detalhes ([`src/app/produto/[id].tsx`](file:///home/eduardorwll/Projects/posta-ai-app/src/app/produto/[id].tsx)).
+   - Badge sutil contextual no card do catálogo ([`src/components/ProductCard.tsx`](file:///home/eduardorwll/Projects/posta-ai-app/src/components/ProductCard.tsx)).
 
 ---
 
 ## 🤝 Etapa 4: Fase 4C — Human-in-the-Loop & Revisão de Anúncios
 
-> **Status:** Planejada | **Dependência:** Etapas 2 e 3
+> **Status:** Parcialmente Entregue Antecipadamente | **Dependência:** Etapa 3
 
 ### Objetivos
 - Garantir que nenhum anúncio seja publicado sem a validação ou ajuste explícito do vendedor.
+- Controlar a transição da máquina de estados do produto (`processando_ia` -> `aguardando_aprovacao` -> `pronto`).
 
 ### Entregáveis Técnicos
 1. **Tela de Detalhes e Edição no Mobile (`src/app/produto/[id].tsx`):**
    - Visualização do anúncio completo com carrossel paginado de fotos originais. *(Entregue antecipadamente)*
-   - Edição manual em tempo real do título comercial, descrição curta, descrição longa, observações, preço, condição e categoria. *(Entregue antecipadamente)*
-   - Botão "✨ Gerar Anúncio com IA" / "🔄 Regenerar com IA" sob demanda. *(Entregue antecipadamente)*
-   - Adoção imediata do `preco_sugerido` com um toque (a ser integrado após a Etapa 3).
+   - Edição manual em tempo real de título comercial, descrições, observações, preço, condição e categoria. *(Entregue antecipadamente)*
+   - Botão "✨ Gerar Anúncio com IA" / "🔄 Regenerar com IA" sob demanda sem tirar novas fotos. *(Entregue antecipadamente)*
    - Exclusão atômica de produtos com purga no Supabase Storage. *(Entregue antecipadamente)*
-2. **Canal Opcional via Telegram:**
-   - Bot de notificações com card interativo e botões Inline (`[✅ Aprovar]`, `[✏️ Editar no App]`).
+   - Botão "✅ Aprovar para Publicação" que transiciona o status para `pronto`.
+2. **Canal Opcional via Notificação Push Local ou Telegram:**
+   - Notificação local ou bot do Telegram para alertar o vendedor quando o enriquecimento estiver finalizado.
 
 ---
 

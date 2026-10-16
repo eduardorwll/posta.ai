@@ -230,6 +230,37 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
   - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md` e `tasks/todo.md`.
   - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
 
+## Etapa 3: Motor de Precificação e Inteligência de Mercado
+
+- [ ] **Task 44: Expansão do Schema da Edge Function `enriquecer-produto`**
+  - [ ] Adicionar campos de precificação no `responseSchema` do Gemini 3.5 Flash-Lite (`preco_medio_mercado`, `preco_minimo_mercado`, `preco_maximo_mercado`, `justificativa_preco`).
+  - [ ] Implementar algoritmo determinístico de depreciação por condição (`FATORES_CONDICAO`) em TypeScript Deno.
+  - [ ] Sanitização defensiva contra valores inválidos e gravação atômica de `preco_medio_mercado` e `preco_sugerido`.
+  - *Critério de Verificação:* Chamada da Edge Function retornando campos numéricos coerentes gravados na tabela `produtos`.
+
+- [ ] **Task 45: Atualização de Contratos TypeScript e Helpers de Mercado**
+  - [ ] Estender `src/types/product.ts` com campos opcionais de faixa de mercado e justificativa.
+  - [ ] Criar função utilitária `calcularCompetitividadePreco(precoUsuario, precoSugerido)`.
+  - *Critério de Verificação:* `bun run typecheck` com 0 erros.
+
+- [ ] **Task 46: Criação do Componente Nativo `MarketPriceGauge.tsx`**
+  - [ ] Régua gráfica intuitiva com destaque de cor semântica para a competitividade do preço (Super Competitivo, Preço Justo, Acima da Média).
+  - [ ] Botão "Adotar Preço Sugerido (R$ X,XX)" com microinteração e feedback háptico.
+  - *Critério de Verificação:* Renderização consistente em temas Claro e Escuro.
+
+- [ ] **Task 47: Integração na Tela de Edição (`src/app/produto/[id].tsx`)**
+  - [ ] Posicionar o `MarketPriceGauge` logo abaixo do campo de valor desejado.
+  - [ ] Atualização em tempo real da competitividade conforme o vendedor altera o preço manualmente.
+  - *Critério de Verificação:* Teste interativo de edição e preenchimento automático.
+
+- [ ] **Task 48: Tag de Inteligência de Mercado no Card do Catálogo (`ProductCard.tsx`)**
+  - [ ] Exibir badge sutil contextual quando houver preço de mercado calculado (ex: `🔥 Preço Competitivo`).
+  - *Critério de Verificação:* `bun run lint` e visualização fluida no catálogo.
+
+- [ ] **Task 49: Sincronização Documental e Validação de Qualidade**
+  - [ ] Atualizar `ROADMAP.md`, `tasks/todo.md`, `estado_atual.md` e `estado_arquitetural_atual.md`.
+  - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados.
+
 ---
 
 ## Checkpoints de Validação
@@ -248,6 +279,7 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
 - [x] **Checkpoint 12 (Após Tasks 36 e 37):** Container GestureHandlerRootView configurado na raiz com flex: 1, eliminando o erro de GestureDetector em tempo de execução.
 - [x] **Checkpoint 13 (Após Tasks 38 a 40):** Animação de slide contínuo horizontal entre abas ativa via Native Driver com interpolação dinâmica de translateX e calibração fina de gestos.
 - [x] **Checkpoint 14 (Após Tasks 41 a 43):** Hardening de segurança implementado contra avisos do Supabase Advisor (DoS em quota de IA neutralizado, listagem pública no storage fechada, search_path fixado).
+- [ ] **Checkpoint 15 (Após Tasks 44 a 49):** Motor de precificação C2C ativo via Gemini 3.5 Flash-Lite com cálculo determinístico de depreciação, régua de mercado e adoção rápida no mobile.
 
 
 
