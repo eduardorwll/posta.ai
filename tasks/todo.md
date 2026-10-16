@@ -118,6 +118,26 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
   - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md`, `README.md` e `tasks/todo.md`.
   - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
 
+## Blindagem de Segurança e Deep Linking Mobile
+
+- [x] **Task 23: Reforço de Segurança no `.gitignore` para a Supabase CLI**
+  - [x] Adicionar `supabase/.branches/`, `supabase/.temp/`, `supabase/.env` e `.supabase/` ao `.gitignore`.
+  - *Critério de Verificação:* `git status` e verificação de regras de ignore. (Concluído)
+
+- [x] **Task 24: Otimização de Performance de RLS no PostgreSQL (`(select auth.uid())`)**
+  - [x] Atualizar `supabase/schema.sql` e `20261015000001_multi_user_auth.sql` com subquery `(select auth.uid())`.
+  - *Critério de Verificação:* Validação de sintaxe e isolamento RLS conferidos. (Concluído)
+
+- [x] **Task 25: Implementação de Deep Linking para Confirmação de E-mail (`postaaiapp://`)**
+  - [x] Configurar `options.emailRedirectTo: createURL('/') || 'postaaiapp://'` em `src/store/useAuthStore.ts`.
+  - [x] Adicionar método `handleDeepLink(url: string)` em `useAuthStore.ts` tratando `token_hash`, `code` e hash params (`access_token`/`refresh_token`).
+  - [x] Conectar listener `useLinkingURL()` no `RootLayout` (`src/app/_layout.tsx`).
+  - *Critério de Verificação:* `bun run typecheck` e `bun run lint`. (Concluído)
+
+- [x] **Task 26: Sincronização Documental & Validação de Qualidade Final**
+  - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md`, `README.md` e `tasks/todo.md`.
+  - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
+
 ---
 
 ## Checkpoints de Validação
@@ -130,3 +150,4 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
 - [x] **Checkpoint 6 (Após Tasks 13 e 14):** Telas nativas de Login e Cadastro funcionais, com roteamento protegido e splash/flicker blindados.
 - [x] **Checkpoint 7 (Após Tasks 15, 16 e 17):** Storage e PostgREST isolados por vendedor, gestão de perfil em configurações e suíte de linters/typecheck 100% verde.
 - [x] **Checkpoint 8 (Após Tasks 18 a 22):** Roadmap perene documentado, script de verificação RLS criado, reload de PostgREST padronizado e limpeza de logout offline blindada.
+- [x] **Checkpoint 9 (Após Tasks 23 a 26):** Gitignore blindado contra artefatos Supabase, RLS otimizado com (select auth.uid()) e Deep Linking mobile configurado.

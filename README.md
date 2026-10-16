@@ -15,8 +15,8 @@ Consulte o documento mestre [`ROADMAP.md`](file:///home/eduardorwll/Projects/pos
 
 ## ⚡ Features
 
-* **Autenticação Multi-Usuário & Roteamento Seguro:** Fluxo nativo completo de autenticação (`Login`, `Cadastro` com feedback amigável de verificação de e-mail e `Logout` seguro). Gerenciado com store Zustand persistente (`useAuthStore`) e guarda de navegação no Expo Router com prevenção de flicker via Splash Screen.
-* **Isolamento Estrito por Vendedor (RLS & Storage):** Cada vendedor tem acesso exclusivo aos seus próprios produtos no PostgREST (`user_id = auth.uid()`). Fotos armazenadas em caminhos isolados no Storage CDN (`{user_id}/{produto_id}/foto_{index}.jpg`) com políticas RLS no bucket `produtos`.
+* **Autenticação Multi-Usuário & Deep Linking Mobile:** Fluxo nativo completo de autenticação (`Login`, `Cadastro` e `Logout` seguro) com suporte a Deep Linking (`postaaiapp://`) para confirmação de e-mail e recuperação de senha. Gerenciado com store Zustand persistente (`useAuthStore`) e guarda de navegação no Expo Router com prevenção de flicker via Splash Screen.
+* **Isolamento Estrito por Vendedor (RLS Otimizado & Storage):** Cada vendedor tem acesso exclusivo aos seus próprios produtos no PostgREST com subqueries de alta performance `(select auth.uid()) = user_id`. Fotos armazenadas em caminhos isolados no Storage CDN (`{user_id}/{produto_id}/foto_{index}.jpg`) com políticas RLS no bucket `produtos`.
 * **Purga Atômica de Cache e Memória no Logout:** Encerramento de sessão com limpeza imediata de produtos e rascunhos no `useProductStore` e `useDraftStore`, imune a quedas de rede.
 * **Câmera In-App & Galeria com Pipeline Nativo:** Captura in-app (`CameraModal` com obturador silencioso e `quality: 0.85`) e seleção na galeria com downsampling e otimização nativos em C++/Java (`expo-image-manipulator`, máx 1920px Full HD e JPEG 0.85), blindando o dispositivo contra Out Of Memory (OOM).
 * **Formulário de Catalogação com Rascunho Persistente:** Cadastro completo (nome, condição, categoria, valor BRL e observações) com persistência automática no AsyncStorage (`useDraftStore`) imune a quedas de rede e reinício de processos no Android.
@@ -33,7 +33,10 @@ Consulte o documento mestre [`ROADMAP.md`](file:///home/eduardorwll/Projects/pos
    - **Via Painel Web (SQL Editor):** Execute o script consolidado disponível em `supabase/schema.sql` (ou sequencialmente os arquivos em `supabase/migrations/`).
 3. *(Opcional)* No SQL Editor, execute o script `supabase/verify_isolation.sql` para rodar a suíte automatizada de testes e verificar o isolamento das políticas de RLS.
 4. Certifique-se de que o bucket público `produtos` foi provisionado no Supabase Storage.
-5. Crie o arquivo `.env` na raiz do projeto (baseado em `.env.example`):
+5. Em **Authentication -> URL Configuration** no painel do Supabase:
+   - **Site URL:** Configure como `postaaiapp://` (ou a URL do seu domínio).
+   - **Redirect URLs:** Adicione `postaaiapp://*` (e `exp://*` caso esteja testando via Expo Go).
+6. Crie o arquivo `.env` na raiz do projeto (baseado em `.env.example`):
 
 ```bash
 EXPO_PUBLIC_SUPABASE_URL=https://seu-projeto.supabase.co

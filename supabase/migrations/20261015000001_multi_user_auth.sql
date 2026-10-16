@@ -25,26 +25,26 @@ DROP POLICY IF EXISTS "Vendedores removem apenas seus próprios produtos" ON pro
 CREATE POLICY "Vendedores visualizam apenas seus próprios produtos"
     ON produtos FOR SELECT
     TO authenticated
-    USING (auth.uid() = user_id);
+    USING ((select auth.uid()) = user_id);
 
 -- Vendedor autenticado insere produtos vinculados estritamente ao seu user_id
 CREATE POLICY "Vendedores inserem apenas seus próprios produtos"
     ON produtos FOR INSERT
     TO authenticated
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK ((select auth.uid()) = user_id);
 
 -- Vendedor autenticado atualiza apenas seus próprios produtos
 CREATE POLICY "Vendedores atualizam apenas seus próprios produtos"
     ON produtos FOR UPDATE
     TO authenticated
-    USING (auth.uid() = user_id)
-    WITH CHECK (auth.uid() = user_id);
+    USING ((select auth.uid()) = user_id)
+    WITH CHECK ((select auth.uid()) = user_id);
 
 -- Vendedor autenticado remove apenas seus próprios produtos
 CREATE POLICY "Vendedores removem apenas seus próprios produtos"
     ON produtos FOR DELETE
     TO authenticated
-    USING (auth.uid() = user_id);
+    USING ((select auth.uid()) = user_id);
 
 -- 4. Isolamento no Supabase Storage (Bucket 'produtos')
 -- Estrutura de caminhos obrigatória: {user_id}/{produto_id}/foto_{index}.jpg
@@ -68,7 +68,7 @@ CREATE POLICY "Vendedor faz upload de fotos em sua pasta"
     TO authenticated
     WITH CHECK (
         bucket_id = 'produtos' AND
-        (storage.foldername(name))[1] = auth.uid()::text
+        (storage.foldername(name))[1] = (select auth.uid())::text
     );
 
 -- Atualização de foto restrita à pasta do próprio usuário
@@ -77,11 +77,11 @@ CREATE POLICY "Vendedor atualiza fotos de sua pasta"
     TO authenticated
     USING (
         bucket_id = 'produtos' AND
-        (storage.foldername(name))[1] = auth.uid()::text
+        (storage.foldername(name))[1] = (select auth.uid())::text
     )
     WITH CHECK (
         bucket_id = 'produtos' AND
-        (storage.foldername(name))[1] = auth.uid()::text
+        (storage.foldername(name))[1] = (select auth.uid())::text
     );
 
 -- Exclusão de foto restrita à pasta do próprio usuário
@@ -90,7 +90,7 @@ CREATE POLICY "Vendedor remove fotos de sua pasta"
     TO authenticated
     USING (
         bucket_id = 'produtos' AND
-        (storage.foldername(name))[1] = auth.uid()::text
+        (storage.foldername(name))[1] = (select auth.uid())::text
     );
 
 -- 5. Força recarga imediata do cache de schemas do PostgREST

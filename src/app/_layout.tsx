@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider, useRouter, useSegments }
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import * as SplashScreen from 'expo-splash-screen';
+import { useLinkingURL } from 'expo-linking';
 
 import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import { useAppTheme } from '@/constants/theme';
@@ -21,6 +22,8 @@ export default function RootLayout() {
   const isInitialized = useAuthStore((state) => state.isInitialized);
   const session = useAuthStore((state) => state.session);
   const initAuth = useAuthStore((state) => state.initAuth);
+  const handleDeepLink = useAuthStore((state) => state.handleDeepLink);
+  const linkingUrl = useLinkingURL();
 
   useEffect(() => {
     initTheme();
@@ -29,6 +32,13 @@ export default function RootLayout() {
       cleanupPromise.then((cleanup) => cleanup?.());
     };
   }, [initTheme, initAuth]);
+
+  // Trata deep linking recebido (ex: confirmacao de cadastro, recuperacao de senha)
+  useEffect(() => {
+    if (linkingUrl) {
+      handleDeepLink(linkingUrl);
+    }
+  }, [linkingUrl, handleDeepLink]);
 
   useEffect(() => {
     if (!isInitialized) return;

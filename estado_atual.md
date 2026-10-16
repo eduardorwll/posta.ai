@@ -1,13 +1,15 @@
 # Estado Atual do Projeto — posta.ai
 
-> Snapshot compilado em 2026-10-15. Concluída com sucesso a **Etapa 1: Blindagem de Isolamento Local & Verificação RLS**, além de **Autenticação Multi-Usuário** e **Governança de Migrações CI/CD (Supabase CLI)**:
+> Snapshot compilado em 2026-10-15. Concluída com sucesso a **Etapa 1: Blindagem de Isolamento Local & Verificação RLS**, **Blindagem de Repositório Público (.gitignore)**, **Otimização de Performance RLS (`(select auth.uid())`)** e **Deep Linking Mobile (`postaaiapp://`)**:
 > - **Skills & Frameworks Ativos:** `addyosmani/agent-skills` (`using-agent-skills`, `code-simplification`, `deprecation-and-migration`, `planning-and-task-breakdown`, `source-driven-development`), `ui-ux-pro-max`, e regras canônicas de `ciembor/agent-rules-books` (*Clean Architecture*, *APOSD*, *Release It!*, *Code Complete*).
 > - **Roadmap Oficial das 5 Fases:** Documentado em [`ROADMAP.md`](file:///home/eduardorwll/Projects/posta-ai-app/ROADMAP.md) como guia definitivo de engenharia do projeto.
+> - **Segurança para Repositório Público:** `.gitignore` blindado contra artefatos internos da Supabase CLI (`supabase/.branches/`, `supabase/.temp/`, `supabase/.env` e `.supabase/`).
+> - **Otimização de Performance RLS no PostgreSQL:** Políticas de RLS em `produtos` e `storage.objects` otimizadas de `auth.uid()` para a subquery `(select auth.uid()) = user_id`, executando a checagem via `InitPlan` uma única vez por consulta.
+> - **Deep Linking Mobile para Confirmação de E-mail:** Configuração de `emailRedirectTo: createURL('/') || 'postaaiapp://'` e listener reativo `useLinkingURL()` em [`_layout.tsx`](file:///home/eduardorwll/Projects/posta-ai-app/src/app/_layout.tsx) acoplado a [`useAuthStore.handleDeepLink`](file:///home/eduardorwll/Projects/posta-ai-app/src/store/useAuthStore.ts), resolvendo redirecionamentos que travavam em `localhost`.
 > - **Purga Atômica no Logout:** Limpeza incondicional de dados de produtos (`useProductStore.resetProdutos()`) e de rascunhos em cache (`useDraftStore.clearDraft()`) no bloco `finally` de `useAuthStore.signOut()`, imune a falhas de rede.
 > - **Verificação Canônica de RLS:** Script transacional [`supabase/verify_isolation.sql`](file:///home/eduardorwll/Projects/posta-ai-app/supabase/verify_isolation.sql) executando bateria de 7 testes adversariais entre múltiplos usuários com `ROLLBACK` seguro.
 > - **Notificação de Reload do PostgREST:** Inclusão de `NOTIFY pgrst, 'reload schema';` nas migrações SQL para eliminar discrepâncias no schema cache.
 > - **Autenticação Nativa Multi-Usuário:** Store Zustand `useAuthStore` reativa com listener `onAuthStateChange`, hidratação via AsyncStorage, telas nativas de `(auth)/login` e `(auth)/cadastro` com suporte a confirmação de e-mail e logout seguro.
-> - **Isolamento de Dados & Storage (RLS):** Coluna `user_id UUID REFERENCES auth.users(id)` e índice composto `idx_produtos_user_created` na tabela `produtos`. Uploads no bucket `produtos` sob a pasta `{user_id}/{produto_id}/foto_{index}.jpg`.
 > - **Diagnóstico e Saúde Perfeitos:** `bunx expo-doctor` com 21/21 verificações aprovadas, `bun run typecheck` com 0 erros e `bun run lint` 100% limpo.
 
 ---

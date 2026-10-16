@@ -89,23 +89,23 @@ DROP POLICY IF EXISTS "Vendedores removem apenas seus próprios produtos" ON pro
 CREATE POLICY "Vendedores visualizam apenas seus próprios produtos"
     ON produtos FOR SELECT
     TO authenticated
-    USING (auth.uid() = user_id);
+    USING ((select auth.uid()) = user_id);
 
 CREATE POLICY "Vendedores inserem apenas seus próprios produtos"
     ON produtos FOR INSERT
     TO authenticated
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK ((select auth.uid()) = user_id);
 
 CREATE POLICY "Vendedores atualizam apenas seus próprios produtos"
     ON produtos FOR UPDATE
     TO authenticated
-    USING (auth.uid() = user_id)
-    WITH CHECK (auth.uid() = user_id);
+    USING ((select auth.uid()) = user_id)
+    WITH CHECK ((select auth.uid()) = user_id);
 
 CREATE POLICY "Vendedores removem apenas seus próprios produtos"
     ON produtos FOR DELETE
     TO authenticated
-    USING (auth.uid() = user_id);
+    USING ((select auth.uid()) = user_id);
 
 -- 5. Configuração do Bucket 'produtos' no Supabase Storage
 INSERT INTO storage.buckets (id, name, public)
@@ -130,7 +130,7 @@ CREATE POLICY "Vendedor faz upload de fotos em sua pasta"
     TO authenticated
     WITH CHECK (
         bucket_id = 'produtos' AND
-        (storage.foldername(name))[1] = auth.uid()::text
+        (storage.foldername(name))[1] = (select auth.uid())::text
     );
 
 CREATE POLICY "Vendedor atualiza fotos de sua pasta"
@@ -138,11 +138,11 @@ CREATE POLICY "Vendedor atualiza fotos de sua pasta"
     TO authenticated
     USING (
         bucket_id = 'produtos' AND
-        (storage.foldername(name))[1] = auth.uid()::text
+        (storage.foldername(name))[1] = (select auth.uid())::text
     )
     WITH CHECK (
         bucket_id = 'produtos' AND
-        (storage.foldername(name))[1] = auth.uid()::text
+        (storage.foldername(name))[1] = (select auth.uid())::text
     );
 
 CREATE POLICY "Vendedor remove fotos de sua pasta"
@@ -150,7 +150,7 @@ CREATE POLICY "Vendedor remove fotos de sua pasta"
     TO authenticated
     USING (
         bucket_id = 'produtos' AND
-        (storage.foldername(name))[1] = auth.uid()::text
+        (storage.foldername(name))[1] = (select auth.uid())::text
     );
 
 -- 6. Força recarga imediata do cache de schemas do PostgREST

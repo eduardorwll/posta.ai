@@ -57,3 +57,10 @@ __pycache__/
 *$py.class
 .pytest_cache/
 
+# Supabase CLI local artifacts
+supabase/.temp/
+supabase/.branches/
+supabase/.env
+.supabase/
+
+

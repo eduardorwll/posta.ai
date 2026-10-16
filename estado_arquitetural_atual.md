@@ -133,12 +133,14 @@ posta-ai-app/
    - Inserção do registro na tabela `produtos` via PostgREST vinculado ao `user_id`.
    - **Rollback Atômico:** Em caso de erro na gravação do banco de dados, o módulo remove automaticamente as fotos recém-enviadas da pasta do vendedor, prevenindo arquivos órfãos.
 3. **Segurança e Isolamento em Banco e Storage (RLS):**
-   - A tabela `produtos` possui Row Level Security (RLS) fechada: `SELECT`, `INSERT`, `UPDATE` e `DELETE` restritos a `auth.uid() = user_id`.
-   - O bucket `produtos` possui política de inserção, atualização e remoção validando `(storage.foldername(name))[1] = auth.uid()::text`.
+   - A tabela `produtos` possui Row Level Security (RLS) estrita: `SELECT`, `INSERT`, `UPDATE` e `DELETE` restritos a `(select auth.uid()) = user_id`.
+   - **Otimização InitPlan:** O encapsulamento de `(select auth.uid())` em subquery instrui o otimizador do PostgreSQL a executar a checagem via `InitPlan` uma única vez por query, em vez de avaliar `auth.uid()` linha a linha.
+   - O bucket `produtos` possui política de inserção, atualização e remoção validando `(storage.foldername(name))[1] = (select auth.uid())::text`.
    - Índice composto `idx_produtos_user_created ON produtos(user_id, created_at DESC)` acelera as buscas do catálogo do vendedor.
-4. **Resiliência e Persistência no Mobile:**
+4. **Resiliência, Deep Linking e Persistência no Mobile:**
    - Formulário imune ao Low Memory Killer do Android via `useDraftStore` no `AsyncStorage`.
    - Autenticação e sessão persistentes via `AsyncStorage` e listener reativo `onAuthStateChange`.
+   - **Deep Linking Nativo (`postaaiapp://`):** Integração com `expo-linking` (`useLinkingURL()`, `createURL('/')` e `parse()`). Em [`useAuthStore.handleDeepLink`](file:///home/eduardorwll/Projects/posta-ai-app/src/store/useAuthStore.ts), suporta fluxos implícitos (`#access_token=...`), fluxo PKCE (`?code=...`) e verificação OTP (`?token_hash=...`), eliminando falhas de redirecionamento para `localhost`.
    - Prevenção de flicker visual na inicialização via controle explícito de `SplashScreen.preventAutoHideAsync()` e `SplashScreen.hideAsync()`.
    - Preferências de tema persistidas com segurança no `expo-secure-store`.
 
