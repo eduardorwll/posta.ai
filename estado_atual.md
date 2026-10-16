@@ -30,6 +30,10 @@
 - **Backend & Nuvem (Supabase Cloud Serverless & CI/CD):**
   - Diretório canônico `supabase/migrations/` com migrações SQL versionadas, reload automático de schema do PostgREST e `supabase/config.toml` para automação via Supabase CLI.
   - Script SQL consolidado em `supabase/schema.sql` com tabela `ia_rate_limiter` e função `consumir_quota_ia(5)`.
+  - Migração de segurança `20261016000001_security_hardening.sql` implementada:
+    - Blindagem de `consumir_quota_ia` com `SET search_path = public` e revogação de permissões para roles públicas (`anon` e `authenticated`), restringindo a execução exclusivamente para `service_role` (Edge Functions) para eliminar risco de DoS.
+    - Eliminação de risco de listagem/scraping público no Supabase Storage: remoção da política ampla de `SELECT` em `storage.objects` e restrição da listagem estritamente à pasta do vendedor autenticado, mantendo a entrega pública de mídia nativa via CDN.
+    - Revogação defensiva de execução pública da função utilitária `rls_auto_enable`.
   - Edge Function `enriquecer-produto` configurada com `gemini-3.5-flash-lite`.
   - Cliente oficial `@supabase/supabase-js` em `src/lib/supabase.ts` com persistência de sessão assíncrona no `@react-native-async-storage/async-storage`.
 

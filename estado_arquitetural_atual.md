@@ -93,7 +93,8 @@ postaaiapp/
 │   └── migrations/           # Migrações versionadas para deploys rastreáveis
 │       ├── 20261015000000_init_schema.sql     # Migração base inicial
 │       ├── 20261015000001_multi_user_auth.sql # Adição de user_id, índice composto e isolamento RLS
-│       └── 20261016000000_ia_global_rate_limiter.sql # Tabela ia_rate_limiter e função consumir_quota_ia(5)
+│       ├── 20261016000000_ia_global_rate_limiter.sql # Tabela ia_rate_limiter e função consumir_quota_ia(5)
+│       └── 20261016000001_security_hardening.sql # Hardening de search_path, revogação de EXECUTE público e restrição de SELECT em storage
 ├── components/ui/            # Gluestack UI v5 enxuto (button, input, textarea, form-control, hstack, vstack, text)
 └── src/
     ├── app/
@@ -142,9 +143,10 @@ postaaiapp/
    - Conversão segura para `ArrayBuffer` via `base64-arraybuffer`, compatível com o engine Hermes do React Native.
    - Streaming direto para o bucket `produtos` no Supabase Storage CDN sob a pasta do usuário autenticado: `{user_id}/{produto_id}/foto_{index}.jpg`.
    - **Rollback Atômico:** Em caso de erro na gravação do banco de dados, o módulo remove automaticamente as fotos recém-enviadas da pasta do vendedor.
-3. **Segurança e Isolamento em Banco e Storage (RLS):**
+3. **Segurança e Isolamento em Banco e Storage (RLS & Hardening):**
    - A tabela `produtos` possui Row Level Security (RLS) estrita: `SELECT`, `INSERT`, `UPDATE` e `DELETE` restritos a `(select auth.uid()) = user_id`.
    - O bucket `produtos` possui política de inserção, atualização e remoção validando `(storage.foldername(name))[1] = (select auth.uid())::text`.
+   - **Proteção contra Listagem Pública no Storage:** Política ampla de `SELECT` em `storage.objects` foi eliminada (resolvendo `public_bucket_allows_listing`); a visualização de fotos via CDN público permanece intacta, mas a listagem de arquivos via API RLS é estritamente restrita à pasta do próprio vendedor autenticado.
    - Índice composto `idx_produtos_user_created ON produtos(user_id, created_at DESC)` acelera as buscas do catálogo do vendedor.
 4. **Navegação Gestual e Transição Nativa de Slide entre Abas (`SwipeableTabScreen.tsx` e `TabsLayout`):**
    - Transição horizontal animada via `transitionSpec` (timing de 220ms com cubic easing) e `sceneStyleInterpolator` interpolando `translateX` dinamicamente conforme `useWindowDimensions()`.
@@ -155,7 +157,8 @@ postaaiapp/
    - Evita a necessidade de tirar novas fotos para testar novas respostas da IA ou atualizar dados comerciais.
 6. **Pipeline de IA Multimodal Serverless de Custo Zero (`enriquecer-produto`):**
    - Implementado na Supabase Edge Function (`supabase/functions/enriquecer-produto/index.ts`) em Deno runtime com **`gemini-3.5-flash-lite`** do Google AI Studio.
-   - **Rate Limiter Global no PostgreSQL:** Função atômica `consumir_quota_ia(5)` com `SELECT ... FOR UPDATE` limita o teto global de chamadas a 5 requisições por minuto somadas em todo o sistema, tornando impossível qualquer cobrança surpresa de API.
+   - **Rate Limiter Global no PostgreSQL:** Função atômica `consumir_quota_ia(5)` com `SELECT ... FOR UPDATE` limita o teto global de chamadas a 5 requisições por minuto somadas em todo o sistema.
+   - **Hardening contra DoS & Sequestro de Namespace:** Função declarada com `SET search_path = public` e execução revogada para roles públicas (`anon` e `authenticated`). Apenas a `service_role` (Edge Functions) possui autorização de execução, impedindo ataques volumétricos externos via REST PostgREST.
 
 ---
 

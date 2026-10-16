@@ -213,6 +213,23 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
   - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md`, `README.md` e `tasks/todo.md`.
   - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
 
+## Hardening de Segurança e Mitigação do Supabase Advisor
+
+- [x] **Task 41: Elaboração da Migração de Segurança (`supabase/migrations/20261016000001_security_hardening.sql`)**
+  - [x] Blindar `consumir_quota_ia` com `SET search_path = public` e revogar execução de `PUBLIC`, `anon` e `authenticated`.
+  - [x] Conceder `GRANT EXECUTE` exclusivamente para `service_role` (Edge Functions).
+  - [x] Revogar permissões públicas de execução de `rls_auto_enable` com tratamento defensivo de exceção.
+  - [x] Remover política ampla de `SELECT` em `storage.objects` e restringir listagem RLS à pasta do vendedor autenticado.
+  - *Critério de Verificação:* Criação e validação do script SQL da migração. (Concluído)
+
+- [x] **Task 42: Sincronização do Script Consolidado Canônico (`supabase/schema.sql`)**
+  - [x] Atualizar definições de `storage.objects` e `consumir_quota_ia` no `schema.sql` canônico.
+  - *Critério de Verificação:* Conferência de paridade estrutural entre schema consolidado e migração. (Concluído)
+
+- [x] **Task 43: Sincronização Documental & Validação de Qualidade Final**
+  - [x] Atualizar `estado_atual.md`, `estado_arquitetural_atual.md` e `tasks/todo.md`.
+  - *Critério de Verificação:* `bun run typecheck`, `bun run lint` e `bunx expo-doctor` 100% aprovados. (Concluído)
+
 ---
 
 ## Checkpoints de Validação
@@ -230,6 +247,7 @@ Plano de tarefas executáveis governado pelas skills `code-simplification`, `dep
 - [x] **Checkpoint 11 (Após Tasks 32 a 35):** Navegação por swipe entre abas ativa, edição manual de produtos, enriquecimento de IA sob demanda e exclusão atômica operacionais.
 - [x] **Checkpoint 12 (Após Tasks 36 e 37):** Container GestureHandlerRootView configurado na raiz com flex: 1, eliminando o erro de GestureDetector em tempo de execução.
 - [x] **Checkpoint 13 (Após Tasks 38 a 40):** Animação de slide contínuo horizontal entre abas ativa via Native Driver com interpolação dinâmica de translateX e calibração fina de gestos.
+- [x] **Checkpoint 14 (Após Tasks 41 a 43):** Hardening de segurança implementado contra avisos do Supabase Advisor (DoS em quota de IA neutralizado, listagem pública no storage fechada, search_path fixado).
 
 
 

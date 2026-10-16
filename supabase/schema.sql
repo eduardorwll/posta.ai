@@ -117,13 +117,20 @@ DROP POLICY IF EXISTS "Fotos de produtos públicas para leitura" ON storage.obje
 DROP POLICY IF EXISTS "Permitir upload de fotos de produtos" ON storage.objects;
 DROP POLICY IF EXISTS "Permitir remoção de fotos de produtos" ON storage.objects;
 DROP POLICY IF EXISTS "Fotos de produtos acessíveis publicamente" ON storage.objects;
+DROP POLICY IF EXISTS "Vendedor visualiza e lista fotos de sua pasta" ON storage.objects;
 DROP POLICY IF EXISTS "Vendedor faz upload de fotos em sua pasta" ON storage.objects;
 DROP POLICY IF EXISTS "Vendedor remove fotos de sua pasta" ON storage.objects;
 DROP POLICY IF EXISTS "Vendedor atualiza fotos de sua pasta" ON storage.objects;
 
-CREATE POLICY "Fotos de produtos acessíveis publicamente"
+-- Permite visualização e listagem via RLS apenas para o vendedor autenticado em sua pasta
+-- (URLs públicas das fotos continuam acessíveis diretamente pelo CDN nativo do bucket público)
+CREATE POLICY "Vendedor visualiza e lista fotos de sua pasta"
     ON storage.objects FOR SELECT
-    USING (bucket_id = 'produtos');
+    TO authenticated
+    USING (
+        bucket_id = 'produtos' AND
+        (storage.foldername(name))[1] = (select auth.uid())::text
+    );
 
 CREATE POLICY "Vendedor faz upload de fotos em sua pasta"
     ON storage.objects FOR INSERT
@@ -170,6 +177,7 @@ CREATE OR REPLACE FUNCTION public.consumir_quota_ia(max_por_minuto INT DEFAULT 5
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
+SET search_path = public
 AS $$
 DECLARE
     rec RECORD;
@@ -198,6 +206,20 @@ BEGIN
     RETURN TRUE;
 END;
 $$;
+
+-- Revoga execução pública e anônima; restringe execução do rate limiter à service_role
+REVOKE EXECUTE ON FUNCTION public.consumir_quota_ia(INT) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.consumir_quota_ia(INT) FROM anon;
+REVOKE EXECUTE ON FUNCTION public.consumir_quota_ia(INT) FROM authenticated;
+GRANT EXECUTE ON FUNCTION public.consumir_quota_ia(INT) TO service_role;
+
+-- Revoga execução pública de funções utilitárias administrativas (se existirem)
+DO $$ BEGIN
+    REVOKE EXECUTE ON FUNCTION public.rls_auto_enable() FROM PUBLIC, anon, authenticated;
+    GRANT EXECUTE ON FUNCTION public.rls_auto_enable() TO postgres, service_role;
+EXCEPTION
+    WHEN undefined_function THEN null;
+END $$;
 
 -- 7. Força recarga imediata do cache de schemas do PostgREST
 NOTIFY pgrst, 'reload schema';
